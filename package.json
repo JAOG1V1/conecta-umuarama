@@ -1,0 +1,9 @@
+{
+  "name": "conecta-umuarama",
+  "version": "1.6.0",
+  "private": true,
+  "description": "Jogo educativo de caminhos e mobilidade em HTML, CSS e JavaScript.",
+  "scripts": {
+    "test": "node tests/run-tests.cjs && node tests/interface.cjs"
+  }
+}

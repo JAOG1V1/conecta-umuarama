@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Construa caminhos acessíveis, compare custos e percursos e conecte os moradores de um bairro fictício em cinco desafios.">
+<title>Conecta Umuarama — Uma cidade para todos</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p class="notice">Ative o JavaScript no navegador para jogar Conecta Umuarama.</p></noscript>
+<div class="wrap">
+<header>
+<div class="brand"><span class="brand-mark" aria-hidden="true"><svg width="27" height="27" viewBox="0 0 32 32" fill="none"><path d="M7 7v18h18V7H7m0 9h18M16 7v18" stroke="currentColor" stroke-width="3"/><circle cx="7" cy="7" r="4" fill="currentColor"/><circle cx="25" cy="25" r="4" fill="currentColor"/></svg></span><div><b>conecta umuarama</b><small>Uma cidade para todos</small></div></div>
+<nav aria-label="Informações e comparação"><button class="btn small" id="compare" aria-label="Comparar soluções" hidden>Comparar</button><button class="btn small ghost" id="help">Como jogar</button><button class="btn small" id="topCredits">Créditos</button></nav>
+</header>
+<main>
+<p id="storageNotice" class="notice" hidden></p>
+<section id="home">
+<div class="hero">
+<div><span class="eyebrow">Um jogo sobre caminhos e pessoas</span><h1>Uma boa cidade<br>conecta <em>todo mundo.</em></h1><p>Construa caminhos, transforme barreiras e ajude cada morador a chegar ao seu destino. O orçamento é pequeno. As possibilidades, muitas.</p><div class="actions"><button class="btn primary" id="start">Começar a construir →</button><button class="btn" id="continue" disabled>Continuar</button><button class="btn ghost" id="chooseHome">Ver fases</button></div><p class="hero-meta">5 fases · Sem pressa · Mouse, toque ou teclado</p></div>
+<div class="hero-art" aria-hidden="true"><svg viewBox="0 0 420 360">
+<defs><pattern id="heroGrid" width="52" height="52" patternUnits="userSpaceOnUse"><rect width="52" height="52" fill="#d7e1bb" stroke="#f6f4eb" stroke-opacity=".5"/></pattern></defs>
+<rect x="12" y="12" width="396" height="336" rx="22" fill="url(#heroGrid)"/>
+<path d="M66 95V210H275V280H350M170 210V85H275" fill="none" stroke="#fff8e2" stroke-width="29" stroke-linejoin="round"/>
+<path d="M66 95V210H275V280H350" fill="none" stroke="#be714c" stroke-width="4" stroke-dasharray="6 7" stroke-linecap="round"/>
+<path d="M170 210V85H275" fill="none" stroke="#417680" stroke-width="4" stroke-dasharray="2 7" stroke-linecap="round"/>
+<g transform="translate(38 42)"><rect x="3" y="24" width="51" height="42" rx="4" fill="#f9e7c8"/><path d="M-3 26L28 0l32 26" fill="#c87751"/><rect x="24" y="43" width="12" height="23" rx="2" fill="#446a5d"/><rect x="9" y="35" width="10" height="12" fill="#8cb5b3"/></g>
+<g transform="translate(247 49)"><rect width="74" height="59" y="13" rx="5" fill="#ebc987"/><path d="M-7 15L37-5l43 20" fill="#4f7b60"/><path d="M10 34h10m12 0h10m12 0h10" stroke="#f8f3e2" stroke-width="10"/><rect x="31" y="48" width="14" height="24" fill="#466e61"/></g>
+<g fill="#73994e" stroke="#507841" stroke-width="2"><circle cx="91" cy="291" r="25"/><circle cx="348" cy="164" r="28"/><circle cx="225" cy="150" r="18"/><circle cx="44" cy="155" r="14"/></g>
+<g stroke="#5c7245" stroke-width="5"><path d="M91 283v31M348 156v34M225 145v23"/></g>
+<rect x="327" y="259" width="49" height="40" rx="7" fill="#a7c09c"/><path d="M338 273h27m-27 9h27" stroke="#5c7757" stroke-width="4"/>
+</svg><img class="hero-character hero-lia" src="assets/characters/lia.png" alt="" width="320" height="320"><img class="hero-character hero-caio" src="assets/characters/caio.png" alt="" width="320" height="320"><img class="hero-character hero-rosa" src="assets/characters/rosa.png" alt="" width="320" height="320"><div class="art-label">Cada caminho muda uma história.</div></div>
+</div>
+<div class="features"><div><b><span class="num">01</span>Pense em conjunto</b><p>Compartilhe caminhos e faça o orçamento render.</p></div><div><b><span class="num">02</span>Remova barreiras</b><p>Rampas e travessias abrem novas possibilidades.</p></div><div><b><span class="num">03</span>Veja acontecer</b><p>Os moradores percorrem as rotas que você criou.</p></div></div>
+</section>
+<section id="game" hidden aria-label="Jogo">
+<div class="game-head"><div><span class="eyebrow" id="phaseLabel"></span><h2 id="phaseTitle"></h2><p id="phaseDescription"></p></div><button class="btn small" id="chooseGame">Fases</button></div>
+<div class="game-layout">
+<aside class="side">
+<div class="panel"><h3>Seu orçamento</h3><div class="budget-number"><span id="remaining">0</span> <small>disponíveis</small></div><div class="meter" aria-hidden="true"><span id="budgetBar"></span></div><div class="budget-meta" id="budgetMeta"></div><div id="desktopChallenges" class="challenges challenges-desktop" aria-label="Desafios desta solução" hidden></div></div>
+<div class="panel"><h3>Quem precisa chegar?</h3><div id="people"></div></div>
+<div class="panel hint-panel"><h3>A história deste caminho</h3><p class="phase-story" id="phaseStory"></p><p class="efficiency-goal" id="efficiencyGoal"></p><details id="hintDetails"><summary>Preciso de uma dica</summary><p class="hint" id="phaseHint"></p></details><details><summary>Entender a pontuação</summary><p>Concluir vale 700 pontos. Você ganha até mais 300 pela proporção do orçamento que sobrou. Tentativas e tempo não descontam pontos. Economia e percursos curtos são dois desafios opcionais. Você pode conquistar os selos em soluções diferentes.</p></details><button class="btn small ghost back-home" id="backHome">← Início</button></div>
+</aside>
+<div class="board-card">
+<div class="board-top"><b id="mapTitle">Seu bairro, suas escolhas</b><span id="recordLabel"></span><strong id="boardBudget"></strong></div>
+<div class="feedback" id="feedback" role="status" aria-live="polite">Escolha uma ferramenta e uma célula no mapa.</div>
+<div class="play-area">
+<div class="map-area"><p id="mapScrollHint" class="scroll-hint" hidden></p><div id="mapViewport" class="map-viewport">
+<div id="mapScroll" class="map-scroll" role="region" tabindex="0" aria-label="Tabuleiro. Em telas estreitas, deslize para ver as colunas."><div class="board-wrap"><div id="board" class="board" role="group" aria-label="Mapa do bairro. Use as setas para navegar e Enter para construir."></div><svg id="routeLayer" class="route-layer" aria-hidden="true"></svg><div id="walkers" class="walkers" aria-hidden="true"></div></div>
+</div></div></div>
+<div class="control-column"><div class="play-controls">
+<div class="tools" role="group" aria-label="Ferramentas"><button class="tool" data-tool="path" aria-pressed="true">Calçada<small>Custo: 1</small></button><button class="tool" data-tool="crossing" aria-pressed="false">Faixa<small>Custo: 3</small></button><button class="tool" data-tool="ramp" aria-pressed="false">Rampa<small>Custo: 2</small></button><button class="tool" data-tool="erase" aria-pressed="false">Remover<small>Reembolsa</small></button></div>
+<div class="board-actions"><button class="btn primary" id="test">Testar rotas →</button><button class="btn" id="undo" disabled>Desfazer</button><button class="btn" id="reset">Reiniciar</button></div>
+<p class="quick-key"><span><b>+</b> Obra sua</span><span><b>E</b> Escada</span><span><b>R</b> Rampa</span></p>
+<div id="reachPanel" class="reach-panel" hidden><div id="reachChoices" class="reach-choices" role="group" aria-label="Mostrar alcance de quem ainda não chegou"></div><details id="reachDetails"><summary id="reachSummary">Ver pista</summary><p id="reachNote"></p></details><p id="reachStatus" class="sr-only" role="status" aria-live="polite"></p></div>
+</div>
+<div id="challenges" class="challenges" aria-label="Desafios desta solução" hidden></div>
+</div>
+</div>
+<details class="map-key"><summary>Legenda do mapa</summary>
+<div class="legend"><span><i class="swatch swatch-terrain"></i>Terreno</span><span><i class="swatch swatch-road"></i>Rua</span><span><i class="swatch swatch-trees"></i>Árvores</span><span><i class="swatch swatch-water"></i>Água</span><span><i class="swatch swatch-existing"></i>Calçada existente</span><span><i class="swatch swatch-built"></i>Obra sua · removível</span><span><i class="swatch swatch-stair">E</i>Escada</span><span><i class="swatch swatch-ramp">R</i>Rampa</span><span><i class="swatch swatch-crossing"></i>Faixa de pedestres</span></div></details>
+<p class="hint keyboard-hint">Teclado: use Tab para entrar no mapa, setas para escolher uma célula e Enter ou Espaço para agir.</p>
+</div>
+</div>
+</section>
+</main>
+<footer><span>Bairro fictício inspirado em Umuarama. As regras de mobilidade são uma simplificação para o jogo.</span><button class="btn small ghost" id="credits">Créditos e autoria</button></footer>
+</div>
+<dialog id="modal" aria-labelledby="modalTitle"><div class="dialog-head"><h2 id="modalTitle"></h2><button class="close" id="closeModal" aria-label="Fechar">×</button></div><div id="modalBody"></div><div class="actions" id="modalActions"></div></dialog>
+<script src="js/core.js" defer></script>
+<script src="js/levels.js" defer></script>
+<script src="js/storage.js" defer></script>
+<script src="js/comparison.js" defer></script>
+<script src="js/characters.js" defer></script>
+<script src="js/story.js" defer></script>
+<script src="js/views.js" defer></script>
+<script src="js/art.js" defer></script>
+<script src="js/comparison-view.js" defer></script>
+<script src="js/help.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>
