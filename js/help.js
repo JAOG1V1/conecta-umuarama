@@ -27,9 +27,9 @@ function showCredits() {
     '<b>Conecta Umuarama — Uma cidade para todos</b>',
     '</p>',
     '<p><b>Estudante:</b> João Gabriel Sabedra Vieira<br><b>Professor orientador:</b> LEANDRO MARINS DE BRITO<br><b>Turma:</b> 1 C ADM<br><b>Escola:</b> Colégio Estadual Cívico-Militar Douradina — PR</p>',
-    '<p>Projeto educativo com bairro fictício. Código, textos e desenhos SVG desta versão foram produzidos com assistência do Codex. As ilustrações de Lia, Caio e Rosa foram geradas por IA para o projeto e estão salvas na pasta assets/characters. A origem e os prompts estão documentados em docs/CREDITOS.md. O jogo usa fontes do sistema e não depende de bibliotecas externas.</p>',
-    '<p>Antes de apresentar, estude, personalize e registre suas próprias contribuições. Registre no seu projeto quais alterações foram feitas por você e o que aprendeu com elas.</p>',
-    '<p>Autoria da versão inicial: desenvolvimento assistido pelo Codex. Contribuições do estudante: a preencher após as personalizações.</p>',
+    '<p>Jogo educativo sobre mobilidade e acessibilidade, ambientado em um bairro fictício inspirado em Umuarama.</p>',
+    '<p><b>Desenvolvimento:</b> código, textos, mapas e desenhos SVG produzidos com assistência do Codex. As ilustrações de Lia, Caio e Rosa foram geradas por IA especificamente para o projeto.</p>',
+    '<p><b>Recursos:</b> imagens locais, fontes do sistema e nenhuma biblioteca externa. A origem dos recursos e os prompts das ilustrações acompanham a documentação do projeto.</p>',
     '<p>Os custos e regras de mobilidade são uma simplificação para fins de jogo; não representam normas técnicas nem projetos reais da cidade.</p>'
   ].join(''),[{label:'Voltar ao jogo',primary:true,action:()=>{}}]);
 }
