@@ -1,38 +1,28 @@
 # Créditos e origem dos recursos
 
-Conecta Umuarama — Uma cidade para todos.
+**Conecta Umuarama — Uma cidade para todos**
+
+## Identificação
+
+| Identificação | Nome |
+| --- | --- |
+| Estudante | João Gabriel Sabedra Vieira |
+| Professor-orientador | LEANDRO MARINS DE BRITO |
+| Turma | 1 C ADM |
+| Escola | Colégio Estadual Cívico-Militar Douradina — PR |
 
 ## Desenvolvimento
 
-Código HTML, CSS e JavaScript, textos, mapas e desenhos SVG desenvolvidos com assistência do Codex. O bairro e os moradores são fictícios. O jogo não utiliza bibliotecas externas ou fontes baixadas.
+Código HTML, CSS e JavaScript, textos, mapas e elementos SVG desenvolvidos com assistência do Codex. O bairro e os moradores são fictícios. O projeto usa fontes do sistema e não depende de bibliotecas externas.
 
-## Personagens ilustrados
+## Ilustrações dos moradores
 
-Os arquivos assets/characters/lia.png, caio.png e rosa.png foram gerados por IA, usando a ferramenta de geração de imagens disponível no Codex, especificamente para este projeto. Foram feitas três gerações, uma por personagem, sem imagens de referência de terceiros.
+As imagens [lia.png](../assets/characters/lia.png), [caio.png](../assets/characters/caio.png) e [rosa.png](../assets/characters/rosa.png) foram geradas por IA com a ferramenta de geração de imagens disponível no Codex, especificamente para este jogo. Foram feitas três gerações, uma por personagem, sem imagens de referência de terceiros.
 
-As imagens foram geradas originalmente em PNG com transparência, 1254 × 1254 pixels. Na versão 1.4, foram redimensionadas para 320 × 320 pixels com interpolação bicúbica, preservando a proporção, a transparência e os desenhos. Não houve nova geração nem redesenho. A interface usa CSS para orientar e movimentar as imagens. Os prompts originais continuam em assets/characters/generation-prompts.json.
+Os PNGs originais tinham transparência e resolução de 1254 × 1254 pixels. Na versão 1.4, foram redimensionados para **320 × 320 pixels**, com interpolação bicúbica, preservando proporção e transparência. Não houve nova geração nem redesenho nessa redução. A orientação e o movimento dos personagens na interface são feitos com CSS e JavaScript.
 
-| Arquivo | Original, em bytes | Versão 1.4, em bytes |
-| --- | ---: | ---: |
-| lia.png | 603.803 | 62.454 |
-| caio.png | 935.319 | 91.289 |
-| rosa.png | 633.339 | 65.693 |
-| Total | 2.172.461 | 219.436 |
+Os prompts utilizados estão disponíveis em [generation-prompts.json](../assets/characters/generation-prompts.json).
 
-A redução do conjunto é de aproximadamente 89,9%. O total original correto é 2,17 MB (2,07 MiB); o atual é 219 KB (214 KiB). Uma cópia dos originais foi preservada fora da pasta distribuída do jogo antes da atualização.
+## Licença
 
-Este registro descreve a origem dos recursos. Não atribua ao estudante desenho manual dessas imagens nem autoria exclusiva de partes geradas com assistência.
-
-## Registro do estudante
-
-Aluno: João Gabriel Sabedra Vieira
-
-Professor-orientador: LEANDRO MARINS DE BRITO
-
-Turma: 1 C ADM
-
-Escola: Colégio Estadual Cívico-Militar Douradina — PR
-
-Contribuições próprias: registre alterações verificáveis em DIARIO.md. Inclua o motivo, a parte do código envolvida e como você confirmou o resultado.
-
-O regulamento fornecido exige autoria e domínio do projeto. Ele não esclarece especificamente o uso de IA. Esclareça esse ponto com a coordenação antes de inscrever esta versão assistida.
+O projeto é distribuído sob a [licença MIT](../LICENSE). Este documento acompanha o código para registrar a origem das imagens e a assistência utilizada no desenvolvimento.
