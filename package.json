@@ -1,8 +1,14 @@
 {
   "name": "conecta-umuarama",
-  "version": "1.6.0",
+  "version": "1.6.2",
   "private": true,
   "description": "Jogo educativo de caminhos e mobilidade em HTML, CSS e JavaScript.",
+  "license": "MIT",
+  "homepage": "https://jaog1v1.github.io/conecta-umuarama/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JAOG1V1/conecta-umuarama.git"
+  },
   "scripts": {
     "test": "node tests/run-tests.cjs && node tests/interface.cjs"
   }
