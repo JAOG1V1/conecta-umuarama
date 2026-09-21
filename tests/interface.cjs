@@ -272,9 +272,9 @@ test('Cancelar reinício apresenta a vitória, confirmar descarta o resultado an
 test('Trocar de fase pelo seletor cancela a vitória anterior',()=>{
   const game=app();game.unlock();game.run('begin(1,LEVELS[1].solution);testRoutes();chooseLevels();');
   game.nodes.get('modalBody').events.click[0]({target:{closest:()=>({dataset:{level:'2'}})}});
-  game.flushEvents();assert.equal(game.nodes.get('modalTitle').textContent,'Trocar de fase?');
-  game.nodes.get('modalActions').children[1].onclick();game.flushEvents();game.advance(10000);
+  game.flushEvents();game.advance(10000);
   assert.equal(game.run('state.index'),2);assert.equal(game.nodes.get('modal').open,false);
+  assert.equal(game.run('JSON.stringify(progress.drafts[1])'),game.run('JSON.stringify(LEVELS[1].solution)'));
 });
 test('Temporizador conclui sem nenhum quadro ou evento de visibilidade',()=>{
   const game=app();game.unlock();game.run('begin(4,LEVELS[4].solution);testRoutes();');
@@ -636,5 +636,145 @@ test('Fase 3 não esconde o percurso maior de Caio atrás da mesma soma de passo
   assert.match(game.nodes.get('modalBody').innerHTML, /Cada escolha tem uma vantagem/);
   assert(!game.nodes.get('modalBody').innerHTML.includes('com o mesmo gasto e os mesmos passos para cada morador'));
 });
+test('Prévia informa custo e reembolso sem construir nem gastar',()=>{
+  const game=app();game.run('begin(0);previewCell(2,2);');
+  assert.match(game.nodes.get('buildPreview').textContent,/Custa 1 · saldo depois: 4/);
+  assert.equal(game.run('Object.keys(state.edits).length'),0);
+  assert.equal(game.nodes.get('remaining').textContent,5);
+  game.run("editCell(2,2);selectTool('erase');previewCell(2,2);");
+  assert.match(game.nodes.get('buildPreview').textContent,/Devolve 1 · saldo depois: 5/);
+  assert.equal(game.run('Object.keys(state.edits).length'),1);
+});
+test('Prévia não marca obstáculos ou construções incompatíveis como disponíveis',()=>{
+  const game=app();game.run('begin(0);');
+  const cells=game.nodes.get('board').children;
+  assert(cells[16].className.includes('build-option'));
+  assert(!cells[0].className.includes('build-option'));
+  game.run('previewCell(0,0);');
+  assert.match(game.nodes.get('buildGuide').className,/unavailable/);
+  game.run("selectTool('crossing');");
+  assert(!cells.some(tile=>tile.className.includes('build-option')));
+  assert.match(game.nodes.get('buildPreview').textContent,/Nenhuma célula disponível/);
+});
+test('Prévia respeita orçamento esgotado e volta a permitir construir após desfazer',()=>{
+  const game=app();game.run("begin(0);for(const [r,c] of [[2,2],[2,3],[2,4],[1,1],[1,2]])editCell(r,c);previewCell(1,4);");
+  assert.match(game.nodes.get('buildPreview').textContent,/Orçamento insuficiente/);
+  assert(!game.nodes.get('board').children.some(tile=>tile.className.includes('build-option')));
+  game.nodes.get('undo').onclick();
+  assert(game.nodes.get('board').children[11].className.includes('build-option'));
+  assert.equal(game.nodes.get('remaining').textContent,1);
+});
+test('Refazer recupera duas ações, orçamento e salvamento sem conceder conquistas',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);editCell(2,3);');
+  game.nodes.get('undo').onclick();game.nodes.get('undo').onclick();
+  assert.equal(game.nodes.get('redo').disabled,false);
+  game.nodes.get('redo').onclick();game.nodes.get('redo').onclick();
+  assert.equal(game.nodes.get('remaining').textContent,3);
+  assert.equal(game.nodes.get('redo').disabled,true);
+  assert.equal(game.run('progress.best.every(value=>value===0)'),true);
+  const resumed=app(false,game.memory);resumed.nodes.get('continue').onclick();
+  assert.equal(resumed.run('JSON.stringify(state.edits)'),game.run('JSON.stringify(state.edits)'));
+});
+test('Erro não apaga Refazer; uma nova construção válida descarta o futuro',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);travelHistory();editCell(0,0);');
+  assert.equal(game.nodes.get('redo').disabled,false);
+  game.run('editCell(2,3);');assert.equal(game.nodes.get('redo').disabled,true);
+  game.nodes.get('redo').onclick();
+  assert.equal(game.run('JSON.stringify(state.edits)'),'{"2,3":"path"}');
+});
+test('Refazer cancela resultado antigo e deixa rotas prontas para novo teste',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);editCell(2,3);editCell(2,4);testRoutes();');
+  const stale=[...game.frames.values()][0];
+  game.nodes.get('undo').onclick();game.nodes.get('redo').onclick();
+  stale(20000);game.advance(20000);game.flush();
+  assert.equal(game.nodes.get('modal').open,false);
+  assert.equal(game.run('state.routes'),null);
+  assert.equal(game.run('Core.score(currentLevel(),state.edits)'),820);
+});
+function shortcut(game,key,extras={}) {
+  let prevented=false;
+  game.document.events.keydown[0]({key,target:{tagName:'BUTTON'},preventDefault(){prevented=true;},...extras});
+  return prevented;
+}
+test('Atalhos selecionam ferramentas e desfazem/refazem com Ctrl ou Cmd',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);');
+  assert(shortcut(game,'4'));assert.equal(game.run('state.tool'),'erase');
+  assert(shortcut(game,'z',{ctrlKey:true}));assert.equal(game.run('Core.cost(state.edits)'),0);
+  assert(shortcut(game,'Z',{metaKey:true,shiftKey:true}));assert.equal(game.run('Core.cost(state.edits)'),1);
+  shortcut(game,'z',{ctrlKey:true});shortcut(game,'y',{ctrlKey:true});
+  assert.equal(game.run('Core.cost(state.edits)'),1);
+});
+test('Atalhos respeitam início, diálogos, campos de texto e modificadores do navegador',()=>{
+  const game=app();assert.equal(shortcut(game,'4'),false);
+  game.run('begin(0);');game.nodes.get('help').onclick();assert.equal(shortcut(game,'4'),false);
+  closeDialog(game);
+  for(const target of [{tagName:'INPUT'},{tagName:'TEXTAREA'},{tagName:'SELECT'},{isContentEditable:true}])
+    assert.equal(shortcut(game,'4',{target}),false);
+  assert.equal(shortcut(game,'4',{altKey:true}),false);
+  assert.equal(shortcut(game,'1',{ctrlKey:true}),false);
+  assert.equal(game.run('state.tool'),'path');
+});
+test('Trocar ferramenta pelo teclado preserva a prévia da célula focada',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);');
+  game.nodes.get('board').children[16].focus();shortcut(game,'4');
+  assert.match(game.nodes.get('buildPreview').textContent,/Devolve 1 · saldo depois: 5/);
+  assert.match(game.nodes.get('buildLabel').textContent,/L3 C3/);
+  shortcut(game,'z',{ctrlKey:true});
+  assert.match(game.nodes.get('buildPreview').textContent,/Só é possível remover/);
+});
+function switchLevel(game,index) {
+  game.run('chooseLevels();');
+  game.nodes.get('modalBody').events.click[0]({target:{closest:()=>({dataset:{level:String(index)}})}});
+  game.flushEvents();
+}
+test('Trocar de fase e recarregar recupera cada tabuleiro separadamente',()=>{
+  const game=app();game.unlock();game.run('begin(0);editCell(2,2);');
+  switchLevel(game,1);game.run('editCell(2,1);');switchLevel(game,0);
+  assert.equal(game.run('JSON.stringify(state.edits)'),'{"2,2":"path"}');
+  const resumed=app(false,game.memory);switchLevel(resumed,1);
+  assert.equal(resumed.run('JSON.stringify(state.edits)'),'{"2,1":"path"}');
+  assert.equal(resumed.run('state.undo.length+state.redo.length'),0);
+});
+test('Reiniciar uma fase preserva outros tabuleiros e limpa o histórico local',()=>{
+  const game=app();game.unlock();game.run('begin(0);editCell(2,2);');
+  switchLevel(game,1);game.run('editCell(2,1);travelHistory();');
+  game.nodes.get('reset').onclick();chooseAction(game,'Recomeçar');
+  assert.equal(game.run('state.redo.length'),0);
+  assert.equal(game.run('JSON.stringify(progress.drafts[1])'),'{}');
+  switchLevel(game,0);assert.equal(game.run('JSON.stringify(state.edits)'),'{"2,2":"path"}');
+});
+test('Rascunhos continuam funcionando na sessão se o navegador não salvar',()=>{
+  const game=app();game.unlock();game.run('canSave=false;begin(0);editCell(2,2);');
+  switchLevel(game,1);game.run('editCell(2,1);');switchLevel(game,0);
+  assert.equal(game.run('JSON.stringify(state.edits)'),'{"2,2":"path"}');
+  assert.equal(game.memory.has('conecta-umuarama-v1'),false);
+});
+test('Guardar após vencer preserva o tabuleiro, cria A e não altera pontos',()=>{
+  const game=app();game.unlock();game.run('begin(3,LEVELS[3].solution);testRoutes();');game.flush();
+  const score=game.run('progress.best[3]');chooseAction(game,'Guardar e experimentar');
+  assert.equal(game.nodes.get('modal').open,false);
+  assert.equal(game.run('JSON.stringify(comparisons.references[3])'),game.run('JSON.stringify(state.edits)'));
+  assert.equal(game.run('progress.best[3]'),score);
+  assert.match(game.nodes.get('feedback').textContent,/Altere o mapa e abra Comparar/);
+});
+test('Guardar após vencer respeita uma referência diferente e permite cancelar',()=>{
+  const game=app();game.unlock();game.run('begin(3,LEVELS[3].alternatives[0]);');
+  saveReference(game);closeDialog(game);
+  game.run('begin(3,LEVELS[3].solution);testRoutes();');game.flush();
+  chooseAction(game,'Guardar e experimentar');
+  assert.equal(game.nodes.get('modalTitle').textContent,'Guardar esta solução como A?');
+  chooseAction(game,'Manter referência A');assert.equal(game.run('Core.cost(comparisons.references[3])'),7);
+  game.run('experimentAfterWin();');chooseAction(game,'Substituir e experimentar');
+  assert.equal(game.run('Core.cost(comparisons.references[3])'),11);
+});
+test('Campanha na tela inicial atualiza após vitória e preserva recordes ao editar',()=>{
+  const game=app();game.run('begin(0,LEVELS[0].solution);testRoutes();');game.flush();closeDialog(game);
+  game.nodes.get('backHome').onclick();
+  assert.match(game.nodes.get('campaignProgress').innerHTML,/<b>1\/5<\/b>/);
+  assert.match(game.nodes.get('campaignProgress').innerHTML,/820 pontos em recordes/);
+  game.nodes.get('continue').onclick();game.run("selectTool('erase');editCell(2,2);");
+  assert.match(game.nodes.get('campaignProgress').innerHTML,/<b>1\/5<\/b>/);
+});
+
 console.log('\n' + passed + '/' + (passed + failed) + ' testes de integração passaram.');
 process.exitCode = failed ? 1 : 0;
