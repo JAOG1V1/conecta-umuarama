@@ -1,27 +1,30 @@
 # Verificações
 
-Versão 1.6.2 · verificações locais em 19/09/2026 e revisão da distribuição em 20/09/2026.
+Versão 1.7.0 · verificações locais em 21/09/2026.
 
 ## Testes automatizados
 
 | Grupo | Resultado | Cobertura |
 | --- | ---: | --- |
-| Lógica | 83/83 | Soluções das cinco fases, alternativas, custos, metas, rotas, diagnóstico, pontuação, persistência e comparação |
-| Interface simulada | 52/52 | Início, edição, desfazer, reinício, diálogos, animações, resultado pendente, troca de fase e comparação A/B |
+| Lógica | 94/94 | Soluções das cinco fases, alternativas, custos, metas, rotas, pontuação, migração e recuperação isolada de rascunhos |
+| Interface simulada | 67/67 | Prévia, construção, desfazer/refazer, atalhos, diálogos, animações, troca de fase, recarga e comparação A/B |
+| Campanha | 15/15 | Resumo de fases e selos, próxima conexão, cartões, dados inválidos e ausência de mutações |
 
-Os **135 testes passaram** em execução local com Node.js. A sintaxe dos 11 scripts do jogo também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
+Os **176 testes passaram** em execução local com Node.js. A sintaxe dos 12 scripts do jogo e dos cinco scripts de testes também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
 
-O workflow [Testes do jogo](https://github.com/JAOG1V1/conecta-umuarama/actions/workflows/tests.yml) executa `npm test` em alterações da branch principal e em pull requests, com Node.js 24. O resultado de cada execução fica registrado no GitHub Actions.
+O workflow [Testes do jogo](https://github.com/JAOG1V1/conecta-umuarama/actions/workflows/tests.yml) está configurado para executar `npm test` em alterações da branch principal e em pull requests, com Node.js 24. O estado de cada execução remota deve ser consultado no GitHub Actions; os números acima são da execução local.
 
 ## Conferência da versão
 
-- Links locais de HTML e documentação conferidos, incluindo nomes de arquivos e subpastas.
-- Créditos revisados na interface, com responsáveis e origem dos recursos, sem campos pendentes.
-- Janela de créditos conferida no navegador embutido em computador e em 390 × 844 pixels, sem transbordamento horizontal; o conteúdo comprido usa rolagem.
-- Página 404 conferida com endereços inexistentes na raiz do projeto e em subpastas, usando servidor local com o mesmo prefixo do site. CSS, ícone e botão de retorno resolvem a partir de `/conecta-umuarama/`.
-- Retorno da página 404 ao início conferido por teclado. A página de erro não executa scripts nem acessa o salvamento.
+- 68 referências locais de HTML, documentação, CSS e JavaScript conferidas, incluindo nomes de arquivos e subpastas. Sem IDs duplicados ou estilos inline nos arquivos HTML.
+- Prévia de custo e navegação por teclado conferidas no navegador, incluindo construção, Desfazer e Refazer.
+- Segunda fase concluída pela interface: nove unidades gastas, oito passos por morador e dois selos conquistados.
+- Ação Guardar e experimentar conferida após a vitória; a referência A aparece na comparação e o tabuleiro permanece disponível.
+- Partida da segunda fase recuperada após recarregar a página.
+- Tabuleiro e controles conferidos em 1280 × 800 e 390 × 844 pixels; comparação em tela estreita com rolagem interna. Sem erros ou avisos no console durante essa sessão.
+- Página 404 e créditos permanecem como na versão 1.6.2, na qual foram conferidos no navegador em computador e tela estreita.
 
-As regras, fases e persistência da campanha foram preservadas. Esta revisão altera a documentação, os textos de créditos e a verificação automática, além de incorporar a página 404 da versão 1.6.1.
+As regras e as cinco fases foram preservadas. A persistência passa a guardar um rascunho por fase, mantendo compatibilidade com o salvamento anterior. A migração, a recuperação de dados danificados e o funcionamento durante a sessão sem armazenamento disponível são cobertos pelos testes automatizados.
 
 ## Exemplos de soluções verificados
 
