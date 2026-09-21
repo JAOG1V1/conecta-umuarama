@@ -15,18 +15,19 @@ A cópia local funciona sem internet. O projeto não usa Service Worker; visitar
 | `index.html` | Telas, controles, diálogo e carregamento dos scripts |
 | `css/` | Estilos do jogo e da página 404, foco, movimento reduzido e adaptação a telas pequenas |
 | `js/core.js` | Regras, validação, custos, rotas e pontuação |
+| `js/building.js` | Prévia de construção, custo, saldo e orientação da ferramenta, sem alterar o mapa |
 | `js/levels.js` | Cinco fases, moradores, metas, falas e construções de referência |
-| `js/storage.js` | Validação, recuperação e gravação do progresso |
+| `js/storage.js` | Validação, recuperação, migração e gravação dos recordes e tabuleiros por fase |
 | `js/comparison.js` | Referências de construção e comparação de custo e percursos |
 | `js/characters.js`, `js/art.js` | Personagens e desenhos das peças, casas e destinos |
 | `js/story.js` | Falas conforme o percurso realizado |
-| `js/views.js`, `js/comparison-view.js`, `js/help.js` | Painéis, comparação, pistas, resultados, ajuda e créditos |
-| `js/main.js` | Estado da partida, eventos, renderização, desfazer, diálogos e animações |
+| `js/views.js`, `js/comparison-view.js`, `js/help.js` | Campanha, cartões de fase, painéis, comparação, pistas, resultados, ajuda e créditos |
+| `js/main.js` | Estado da partida, eventos, prévia, renderização, desfazer/refazer, diálogos e animações |
 | `assets/` | Ícone, imagens locais e registro dos prompts dos personagens |
-| `tests/` | Testes de lógica e da interface simulada |
+| `tests/` | Testes de lógica, interface simulada e resumo da campanha |
 | `docs/` | Arquitetura, créditos e registro de verificações |
 
-Os 11 scripts clássicos usam `defer` nesta ordem: `core`, `levels`, `storage`, `comparison`, `characters`, `story`, `views`, `art`, `comparison-view`, `help` e `main`. Preserve a sequência de dependências.
+Os 12 scripts clássicos usam `defer` nesta ordem: `core`, `building`, `levels`, `storage`, `comparison`, `characters`, `story`, `views`, `art`, `comparison-view`, `help` e `main`. Preserve a sequência de dependências.
 
 ## Verificar alterações
 
@@ -41,11 +42,14 @@ Para executar os grupos separadamente:
 ```sh
 node tests/run-tests.cjs
 node tests/interface.cjs
+node tests/campaign.cjs
 ```
 
-Os testes não modificam o progresso real. A interface simulada verifica eventos e estado; ela não abre um navegador nem comprova aparência, contraste ou uso com tecnologia assistiva. Confira também os fluxos afetados no navegador, incluindo teclado, telas pequenas e movimento reduzido. Use uma cópia ou perfil separado para verificar recuperação de dados.
+Os testes não modificam o progresso real. A interface simulada verifica eventos e estado; ela não abre um navegador nem comprova aparência, contraste ou uso com tecnologia assistiva. O grupo `campaign.cjs` verifica contagem de fases e selos, indicação do próximo objetivo, cartões de obras guardadas e preservação dos dados ao renderizar.
 
-Mantenha regras em `core.js`, conteúdo em `levels.js` e interação nos arquivos de interface. Mudanças na ordem ou no formato das fases exigem revisão da compatibilidade dos salvamentos. Registre alterações em [CHANGELOG.md](CHANGELOG.md), verificações em [docs/VERIFICACAO.md](docs/VERIFICACAO.md) e origem dos recursos em [docs/CREDITOS.md](docs/CREDITOS.md). Consulte também [CONTRIBUTING.md](CONTRIBUTING.md).
+Confira também os fluxos afetados no navegador, incluindo prévia com ponteiro e foco, atalhos, Desfazer/Refazer, troca de fase, comparação após vitória, telas pequenas e movimento reduzido. Use uma cópia ou perfil separado para verificar recuperação de dados e continuidade da sessão com armazenamento bloqueado.
+
+Mantenha regras em `core.js`, conteúdo em `levels.js` e interação nos arquivos de interface. A prévia de `building.js` reutiliza `Core.apply`: evite criar regras de construção paralelas. Mudanças na ordem ou no formato das fases exigem revisão da compatibilidade dos salvamentos, incluindo os rascunhos por fase. Registre alterações em [CHANGELOG.md](CHANGELOG.md), verificações em [docs/VERIFICACAO.md](docs/VERIFICACAO.md) e origem dos recursos em [docs/CREDITOS.md](docs/CREDITOS.md). Consulte também [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Página 404
 

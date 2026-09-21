@@ -2,6 +2,25 @@
 
 Mudanças do Conecta Umuarama, da mais recente para a mais antiga. As datas aparecem quando estão registradas nas verificações do projeto. Este histórico foi organizado a partir da documentação existente; não representa uma sequência de commits antigos no GitHub.
 
+## 1.7.0 — 21/09/2026
+
+### Adicionado
+
+- Prévia de construção ao apontar ou focar uma célula, com custo, reembolso, saldo resultante e motivo de impedimento. O módulo Building reutiliza as regras do jogo sem alterar o tabuleiro.
+- Indicação das células disponíveis para a ferramenta selecionada.
+- Refazer, com botão e atalhos de teclado, além dos atalhos 1–4 para selecionar ferramentas. Atalhos respeitam diálogos abertos e campos editáveis.
+- Um rascunho por fase, preservado ao alternar entre tabuleiros, com indicação de obra guardada no seletor.
+- Resumo da campanha com cinco fases, oito selos, pontos dos recordes e sugestão da próxima conquista.
+- Ação Guardar e experimentar após vitórias fora do tutorial, com confirmação antes de substituir uma referência diferente.
+- Testes específicos do resumo e dos cartões da campanha em `tests/campaign.cjs`, incluídos em `npm test`.
+
+### Alterado
+
+- Salvamentos anteriores são migrados para preservar o tabuleiro ativo como rascunho da fase correspondente; a recuperação conserva os rascunhos válidos mesmo se outra parte estiver danificada.
+- Continuar e os tabuleiros por fase permanecem disponíveis em memória quando o navegador não permite gravar o progresso.
+- Reiniciar pede confirmação e limpa apenas a obra da fase escolhida, preservando outros tabuleiros, referências e recordes.
+- Documentação atualizada para os controles, a prévia, os rascunhos e os 12 scripts do jogo.
+
 ## 1.6.2 — 20/09/2026
 
 ### Alterado

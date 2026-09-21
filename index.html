@@ -33,6 +33,7 @@
 <rect x="327" y="259" width="49" height="40" rx="7" fill="#a7c09c"/><path d="M338 273h27m-27 9h27" stroke="#5c7757" stroke-width="4"/>
 </svg><img class="hero-character hero-lia" src="assets/characters/lia.png" alt="" width="320" height="320"><img class="hero-character hero-caio" src="assets/characters/caio.png" alt="" width="320" height="320"><img class="hero-character hero-rosa" src="assets/characters/rosa.png" alt="" width="320" height="320"><div class="art-label">Cada caminho muda uma história.</div></div>
 </div>
+<section id="campaignProgress" aria-label="Seu progresso" class="home-progress"></section>
 <div class="features"><div><b><span class="num">01</span>Pense em conjunto</b><p>Compartilhe caminhos e faça o orçamento render.</p></div><div><b><span class="num">02</span>Remova barreiras</b><p>Rampas e travessias abrem novas possibilidades.</p></div><div><b><span class="num">03</span>Veja acontecer</b><p>Os moradores percorrem as rotas que você criou.</p></div></div>
 </section>
 <section id="game" hidden aria-label="Jogo">
@@ -51,8 +52,9 @@
 <div id="mapScroll" class="map-scroll" role="region" tabindex="0" aria-label="Tabuleiro. Em telas estreitas, deslize para ver as colunas."><div class="board-wrap"><div id="board" class="board" role="group" aria-label="Mapa do bairro. Use as setas para navegar e Enter para construir."></div><svg id="routeLayer" class="route-layer" aria-hidden="true"></svg><div id="walkers" class="walkers" aria-hidden="true"></div></div>
 </div></div></div>
 <div class="control-column"><div class="play-controls">
-<div class="tools" role="group" aria-label="Ferramentas"><button class="tool" data-tool="path" aria-pressed="true">Calçada<small>Custo: 1</small></button><button class="tool" data-tool="crossing" aria-pressed="false">Faixa<small>Custo: 3</small></button><button class="tool" data-tool="ramp" aria-pressed="false">Rampa<small>Custo: 2</small></button><button class="tool" data-tool="erase" aria-pressed="false">Remover<small>Reembolsa</small></button></div>
-<div class="board-actions"><button class="btn primary" id="test">Testar rotas →</button><button class="btn" id="undo" disabled>Desfazer</button><button class="btn" id="reset">Reiniciar</button></div>
+<div class="tools" role="group" aria-label="Ferramentas"><button class="tool" data-tool="path" aria-pressed="true" aria-keyshortcuts="1"><kbd aria-hidden="true">1</kbd> Calçada<small>Custo: 1</small></button><button class="tool" data-tool="crossing" aria-pressed="false" aria-keyshortcuts="2"><kbd aria-hidden="true">2</kbd> Faixa<small>Custo: 3</small></button><button class="tool" data-tool="ramp" aria-pressed="false" aria-keyshortcuts="3"><kbd aria-hidden="true">3</kbd> Rampa<small>Custo: 2</small></button><button class="tool" data-tool="erase" aria-pressed="false" aria-keyshortcuts="4"><kbd aria-hidden="true">4</kbd> Remover<small>Reembolsa</small></button></div>
+<div class="build-guide" id="buildGuide"><b id="buildLabel">Calçada</b><p id="buildPreview">Use nos terrenos livres.</p></div>
+<div class="board-actions"><button class="btn primary" id="test">Testar rotas →</button><button class="btn" id="undo" disabled title="Desfazer (Ctrl ou Cmd + Z)">Desfazer</button><button class="btn" id="redo" disabled title="Refazer (Ctrl ou Cmd + Shift + Z)">Refazer</button><button class="btn ghost" id="reset">Reiniciar</button></div>
 <p class="quick-key"><span><b>+</b> Obra sua</span><span><b>E</b> Escada</span><span><b>R</b> Rampa</span></p>
 <div id="reachPanel" class="reach-panel" hidden><div id="reachChoices" class="reach-choices" role="group" aria-label="Mostrar alcance de quem ainda não chegou"></div><details id="reachDetails"><summary id="reachSummary">Ver pista</summary><p id="reachNote"></p></details><p id="reachStatus" class="sr-only" role="status" aria-live="polite"></p></div>
 </div>
@@ -61,7 +63,7 @@
 </div>
 <details class="map-key"><summary>Legenda do mapa</summary>
 <div class="legend"><span><i class="swatch swatch-terrain"></i>Terreno</span><span><i class="swatch swatch-road"></i>Rua</span><span><i class="swatch swatch-trees"></i>Árvores</span><span><i class="swatch swatch-water"></i>Água</span><span><i class="swatch swatch-existing"></i>Calçada existente</span><span><i class="swatch swatch-built"></i>Obra sua · removível</span><span><i class="swatch swatch-stair">E</i>Escada</span><span><i class="swatch swatch-ramp">R</i>Rampa</span><span><i class="swatch swatch-crossing"></i>Faixa de pedestres</span></div></details>
-<p class="hint keyboard-hint">Teclado: use Tab para entrar no mapa, setas para escolher uma célula e Enter ou Espaço para agir.</p>
+<p class="hint keyboard-hint">Teclado: Tab entra no mapa; setas escolhem a célula; Enter ou Espaço age. 1–4 trocam a ferramenta. Ctrl/Cmd + Z desfaz; com Shift, refaz.</p>
 </div>
 </div>
 </section>
@@ -70,6 +72,7 @@
 </div>
 <dialog id="modal" aria-labelledby="modalTitle"><div class="dialog-head"><h2 id="modalTitle"></h2><button class="close" id="closeModal" aria-label="Fechar">×</button></div><div id="modalBody"></div><div class="actions" id="modalActions"></div></dialog>
 <script src="js/core.js" defer></script>
+<script src="js/building.js" defer></script>
 <script src="js/levels.js" defer></script>
 <script src="js/storage.js" defer></script>
 <script src="js/comparison.js" defer></script>
