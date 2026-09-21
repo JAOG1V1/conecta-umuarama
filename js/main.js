@@ -1,6 +1,6 @@
 /* INTERFACE: as regras ficam em Core; aqui ligamos botões, desenho e salvamento. */
 const $ = id => document.getElementById(id);
-const state = { index:0, edits:{}, undo:[], tool:'path', focus:0, routes:null, reachIndex:null, frame:0, motionTimer:0, generation:0, playing:false, finishMotion:null, pendingResult:null, filter:null, tutorial:false };
+const state = { index:0, edits:{}, undo:[], redo:[], tool:'path', focus:0, routes:null, reachIndex:null, frame:0, motionTimer:0, generation:0, playing:false, finishMotion:null, pendingResult:null, filter:null, tutorial:false };
 let canSave = true;
 let progress = Storage.empty();
 let comparisons;
@@ -17,7 +17,9 @@ function loadProgress() {
 }
 function saveProgress() {
   progress.active = { index: state.index, edits: { ...state.edits } };
+  progress.drafts[state.index] = { ...state.edits };
   $('continue').disabled = false;
+  renderCampaign();
   if (!canSave) return;
   const result = Storage.save(progress);
   canSave = result.available;
@@ -28,6 +30,44 @@ function feedback(message, error=false) {
   $('feedback').classList.toggle('error',error);
 }
 function currentLevel() { return LEVELS[state.index]; }
+function renderCampaign() {
+  $('campaignProgress').innerHTML=Views.campaignProgress(LEVELS,progress);
+  $('continue').textContent=progress.active ? 'Continuar · fase '+(progress.active.index+1) : 'Continuar';
+}
+function renderBuildOptions() {
+  const level=currentLevel();
+  let available=0;
+  for(const tile of $('board').children) {
+    const r=Number(tile.dataset.row),c=Number(tile.dataset.col);
+    const preview=Building.preview(level,state.edits,r,c,state.tool);
+    tile.classList.toggle('build-option',preview.allowed);
+    tile.classList.remove('build-target');
+    available+=Number(preview.allowed);
+    const description=tileData(level,r,c).label;
+    tile.setAttribute('aria-label','Linha '+(r+1)+', coluna '+(c+1)+': '+description+'. '+preview.message);
+    tile.title=description+'. '+preview.message;
+  }
+  const guide=Building.guide(state.tool,available);
+  $('buildLabel').textContent=guide.label;
+  $('buildPreview').textContent=guide.message;
+  $('buildGuide').classList.remove('unavailable');
+  const focused=document.activeElement;
+  if($('board').contains(focused)&&focused?.dataset.row!==undefined)
+    previewCell(Number(focused.dataset.row),Number(focused.dataset.col));
+}
+function previewCell(r,c) {
+  const preview=Building.preview(currentLevel(),state.edits,r,c,state.tool);
+  for(const tile of $('board').children)tile.classList.toggle('build-target',
+    preview.allowed&&Number(tile.dataset.row)===r&&Number(tile.dataset.col)===c);
+  $('buildLabel').textContent=Building.labels[state.tool]+' · L'+(r+1)+' C'+(c+1);
+  $('buildPreview').textContent=preview.message;
+  $('buildGuide').classList.toggle('unavailable',!preview.allowed);
+}
+function selectTool(tool) {
+  if(!Object.hasOwn(Building.labels,tool))return;
+  state.tool=tool;renderHud();
+  feedback('Ferramenta: '+Building.labels[tool]+'. O pontilhado mostra onde ela pode ser usada.');
+}
 function cancelMotion(clear=false) {
   cancelAnimationFrame(state.frame);
   clearTimeout(state.motionTimer);
@@ -160,8 +200,10 @@ function renderHud() {
     $(id).innerHTML=challenges;
   }
   $('undo').disabled=!state.undo.length;
+  $('redo').disabled=!state.redo.length;
   document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===state.tool)));
   renderPeople();
+  renderBuildOptions();
 }
 function render() {renderBoard();renderHud();}
 function showPendingResult() {
@@ -205,25 +247,45 @@ function showComparison(message='') {
   }});
   openModal('Comparar soluções',ComparisonView.render(currentLevel(),reference,state.edits,message||comparisons.message),buttons,true);
 }
-function saveComparison() {
+function captureComparison() {
   const snapshot=Comparison.capture(currentLevel(),state.edits);
   if(!snapshot)return;
   comparisons.references[state.index]=snapshot;
   const result=Comparison.save(comparisons.references);
   comparisons.available=result.available;
   comparisons.message=result.message;
+  return result;
+}
+function saveComparison() {
+  const result=captureComparison();
+  if(!result)return;
   showComparison(result.saved ? 'Referência A guardada. Volte ao mapa e experimente outra construção.' : result.message);
+}
+function experimentAfterWin() {
+  if(!Core.score(currentLevel(),state.edits))return;
+  const reference=comparisons.references[state.index];
+  const store=()=>{
+    const result=captureComparison();
+    feedback(result?.saved ? 'Solução guardada como A. Altere o mapa e abra Comparar para ver o que mudou.'
+      : (result?.message||'Referência disponível nesta sessão.'));
+  };
+  if(reference!==null&&!Comparison.same(reference,state.edits)) {
+    openModal('Guardar esta solução como A?','<p>Já existe uma referência nesta fase. A construção atual ficará no lugar dela. Seu tabuleiro e seus recordes permanecem.</p>',[
+      {label:'Manter referência A'},
+      {label:'Substituir e experimentar',primary:true,action:store}
+    ]);
+  } else store();
 }
 function restoreComparison() {
   const snapshot=Comparison.capture(currentLevel(),comparisons.references[state.index]);
   if(!snapshot||Comparison.same(snapshot,state.edits))return;
   // Restaurar é uma edição: cancela um resultado pendente antes de trocar o mapa.
-  cancelMotion(true);state.undo.push({...state.edits});state.edits=snapshot;
+  cancelMotion(true);state.undo.push({...state.edits});state.redo=[];state.edits=snapshot;
   render();saveProgress();feedback('Referência A colocada no mapa. Desfazer recupera sua construção anterior.');
   $('board').children[state.focus]?.focus({preventScroll:true});
 }
-function confirmReset(action) {
-  openModal('Recomeçar este tabuleiro?','<p>As construções atuais serão removidas. Seus recordes e fases concluídas permanecem salvos.</p>',[
+function confirmReset(action,index=state.index) {
+  openModal('Recomeçar este tabuleiro?','<p>Somente as construções da fase '+LEVELS[index].id+' serão removidas. Os outros tabuleiros, as referências e seus recordes permanecem.</p>',[
     {label:'Continuar jogando',action:()=>{}},{label:'Recomeçar',primary:true,action}
   ]);
 }
@@ -233,7 +295,9 @@ function begin(index,edits={},showTutorial=false) {
     return;
   }
   cancelMotion(true);
-  state.index=index;state.edits={...edits};state.undo=[];state.focus=0;state.tool='path';state.tutorial=showTutorial;
+  state.index=index;state.edits={...edits};state.undo=[];state.redo=[];state.tool='path';state.tutorial=showTutorial;
+  const origin=LEVELS[index].people[0].from, row=LEVELS[index].map.findIndex(line=>line.includes(origin));
+  state.focus=row*LEVELS[index].map[0].length+LEVELS[index].map[row].indexOf(origin);
   $('home').hidden=true;$('game').hidden=false;
   $('compare').hidden=false;
   document.body?.classList.add('is-playing');
@@ -248,11 +312,8 @@ function begin(index,edits={},showTutorial=false) {
   ]);
 }
 function chooseLevels() {
-  const total = progress.best.reduce((sum, points) => sum + points, 0);
-  const completed = progress.best.filter(points => points > 0).length;
-  const intro = '<p>Complete uma fase para abrir a próxima. Repita fases para experimentar outras soluções.</p>'
-    + '<p><b>' + completed + ' de ' + LEVELS.length + ' fases concluídas · '
-    + total + ' pontos de economia</b></p>';
+  const intro = Views.campaignProgress(LEVELS,progress)
+    + '<p>Complete uma fase para abrir a próxima. Cada tabuleiro é guardado ao trocar de fase.</p>';
   openModal('Os caminhos do seu bairro', intro
     + LEVELS.map((level,index) => Views.levelCard(level,index,progress)).join(''));
 }
@@ -260,7 +321,7 @@ function chooseLevels() {
 function editCell(r,c) {
   const result=Core.apply(currentLevel(),state.edits,r,c,state.tool);
   if(!result.ok){feedback(result.message,true);return;}
-  cancelMotion(true);state.undo.push({...state.edits});state.edits=result.edits;
+  cancelMotion(true);state.undo.push({...state.edits});state.redo=[];state.edits=result.edits;
   render();saveProgress();
   if(state.tutorial&&state.index===0) {
     const ready=Core.score(currentLevel(),state.edits)>0;
@@ -336,10 +397,11 @@ function resultModal(points) {
   const level = currentLevel(), last = state.index === LEVELS.length - 1;
   const total = progress.best.reduce((sum, value) => sum + value, 0);
   openModal(last ? 'Um bairro mais conectado!' : 'Todo mundo chegou!',
-    Views.result(level, state.edits, points, total, last), [
+    Views.result(level, state.edits, points, total, last)+(last?Views.campaignProgress(LEVELS,progress):''), [
       {label:'Experimentar outra solução'},
       {label:last ? 'Ver minhas fases' : 'Próxima fase →', primary:true,
-        action:()=>last ? chooseLevels() : begin(state.index+1)}
+        action:()=>last ? chooseLevels() : begin(state.index+1,progress.drafts[state.index+1]??{})},
+      ...(!level.tutorial?[{label:'Guardar e experimentar',action:experimentAfterWin}]:[])
     ]);
 }
 
@@ -377,14 +439,36 @@ $('board').addEventListener('keydown',event=>{
   event.preventDefault();b.tabIndex=-1;state.focus=r*width+c;const next=$('board').children[state.focus];next.tabIndex=0;next.focus({preventScroll:true});
   next.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});
 });
-document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>{
-  state.tool=b.dataset.tool;renderHud();feedback(({path:'Calçada selecionada. Clique em um terreno livre.',crossing:'Faixa selecionada. Clique em uma rua.',ramp:'Rampa selecionada. Clique em uma escada.',erase:'Remover selecionado. Clique em uma peça que você construiu.'})[state.tool]);
+for(const type of ['pointerover','focusin'])$('board').addEventListener(type,event=>{
+  const tile=event.target.closest('button[data-row]');
+  if(tile)previewCell(Number(tile.dataset.row),Number(tile.dataset.col));
 });
-$('undo').onclick=()=>{
-  if(!state.undo.length)return;cancelMotion(true);state.edits=state.undo.pop();render();saveProgress();feedback('Última ação desfeita. O orçamento foi recalculado.');
-};
+$('board').addEventListener('pointerleave',renderBuildOptions);
+$('board').addEventListener('focusout',event=>{
+  if(!$('board').contains(event.relatedTarget))renderBuildOptions();
+});
+document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>selectTool(b.dataset.tool));
+function travelHistory(redo=false) {
+  const source=redo?state.redo:state.undo,target=redo?state.undo:state.redo;
+  if(!source.length)return;
+  cancelMotion(true);target.push({...state.edits});state.edits=source.pop();
+  render();saveProgress();feedback(redo?'Ação refeita. O orçamento foi recalculado.':'Última ação desfeita. Use Refazer para recuperá-la.');
+}
+$('undo').onclick=()=>travelHistory();
+$('redo').onclick=()=>travelHistory(true);
+document.addEventListener('keydown',event=>{
+  if($('game').hidden||$('modal').open||event.altKey||event.target?.isContentEditable
+    ||/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName||''))return;
+  const key=event.key.toLowerCase(), modifier=event.ctrlKey||event.metaKey;
+  if(modifier&&(key==='z'||key==='y')) {
+    event.preventDefault();travelHistory(key==='y'||event.shiftKey);return;
+  }
+  if(!modifier&&!event.shiftKey&&/^[1-4]$/.test(key)) {
+    event.preventDefault();selectTool(['path','crossing','ramp','erase'][Number(key)-1]);
+  }
+});
 $('test').onclick=testRoutes;$('reset').onclick=()=>confirmReset(()=>begin(state.index));
-$('start').onclick=()=>progress.active&&Object.keys(progress.active.edits).length?confirmReset(()=>begin(0,{},true)):begin(0,{},true);
+$('start').onclick=()=>progress.drafts[0]&&Object.keys(progress.drafts[0]).length?confirmReset(()=>begin(0,{},true),0):begin(0,{},true);
 $('continue').onclick=()=>{if(progress.active)begin(progress.active.index,progress.active.edits);};
 $('chooseHome').onclick=chooseLevels;$('chooseGame').onclick=chooseLevels;
 $('backHome').onclick=()=>{cancelMotion();saveProgress();$('game').hidden=true;$('home').hidden=false;$('compare').hidden=true;document.body?.classList.remove('is-playing');$('start').focus();};
@@ -406,10 +490,7 @@ $('modalBody').addEventListener('click',event=>{
   const index=Number(b.dataset.level);$('modal').close();
   // Escolher o tabuleiro já aberto apenas fecha o seletor; preserva a vitória.
   if(index===state.index&&!$('game').hidden)return;
-  const load=()=>begin(index,progress.active?.index===index?progress.active.edits:{},index===0&&!progress.best[0]);
-  if(progress.active&&progress.active.index!==index&&Object.keys(progress.active.edits).length) {
-    openModal('Trocar de fase?','<p>O tabuleiro em andamento será substituído. Seus recordes permanecem.</p>',[{label:'Ficar nesta fase',action:()=>{}},{label:'Trocar',primary:true,action:load}]);
-  } else load();
+  begin(index,progress.drafts[index]??{},index===0&&!progress.best[0]);
 });
 $('people').addEventListener('click',event=>{
   const b=event.target.closest('[data-person]');if(!b||!state.routes||state.playing)return;
@@ -421,6 +502,6 @@ document.addEventListener('visibilitychange',()=>{
   state.finishMotion?.();
   showPendingResult();
 });
-loadProgress();$('continue').disabled=!progress.active;
+loadProgress();$('continue').disabled=!progress.active;renderCampaign();
 comparisons=Comparison.load();$('compare').hidden=true;
 $('home').hidden=false;$('game').hidden=true;
