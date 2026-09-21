@@ -2,7 +2,7 @@
 const Storage = (() => {
   "use strict";
   const KEY = "conecta-umuarama-v1";
-  const empty = () => ({ version: 1, best: LEVELS.map(() => 0), active: null });
+  const empty = () => ({ version: 1, best: LEVELS.map(() => 0), active: null, drafts: LEVELS.map(() => null) });
   const validScore = n => Number.isInteger(n) && (n === 0 || n >= 700 && n <= 1000);
 
   function isUnlocked(data, index) {
@@ -14,23 +14,33 @@ const Storage = (() => {
   function validateProgress(data) {
     if (!data || data.version !== 1 || !Array.isArray(data.best) || data.best.length !== LEVELS.length)
       throw new Error("Formato de salvamento inválido.");
-    if (!data.best.every(validScore))
+    if (!Array.from(data.best).every(validScore))
       throw new Error("Pontuação inválida.");
     if (data.shortBest !== undefined && (!Array.isArray(data.shortBest)
       || data.shortBest.length !== LEVELS.length
-      || !data.shortBest.every((value, i) => typeof value === 'boolean' && (!value || data.best[i] > 0))))
+      || !Array.from(data.shortBest).every((value, i) => typeof value === 'boolean' && (!value || data.best[i] > 0))))
       throw new Error('Selos inválidos.');
     if (data.active !== null) {
       const active = data.active;
       if (!active || !isUnlocked(data, active.index) ||
-          !Core.validatesave(LEVELS[active.index], active.edits))
+          !Core.validateSave(LEVELS[active.index], active.edits))
         throw new Error("Tabuleiro salvo inválido.");
     }
+    // O campo é opcional apenas para migrar partidas anteriores à versão 1.7.
+    if (data.drafts !== undefined && (!Array.isArray(data.drafts) || data.drafts.length !== LEVELS.length
+      || !Array.from(data.drafts).every((edits, index) => edits === null
+        || isUnlocked(data, index) && Core.validateSave(LEVELS[index], edits))))
+      throw new Error('Rascunhos de fases inválidos.');
+    const drafts = LEVELS.map((_, index) => data.drafts?.[index] == null ? null : {...data.drafts[index]});
+    // A partida ativa também precisa estar disponível no seletor de fases.
+    // Nunca compartilha o mesmo objeto editável com active ou com a entrada.
+    if (data.active) drafts[data.active.index] = {...data.active.edits};
     return {
       version: 1,
       best: data.best.slice(),
       ...(data.shortBest ? {shortBest: data.shortBest.slice()} : {}),
-      active: data.active ? { index: data.active.index, edits: { ...data.active.edits } } : null
+      active: data.active ? { index: data.active.index, edits: { ...data.active.edits } } : null,
+      drafts
     };
   }
 
@@ -42,11 +52,17 @@ const Storage = (() => {
     if (Array.isArray(data.shortBest)) {
       recovered.shortBest = LEVELS.map((_, i) => recovered.best[i] > 0 && data.shortBest[i] === true);
     }
-    try {
-      return validateProgress({...recovered, active: data.active ?? null});
-    } catch (_) {
-      return recovered;
+    // Uma fase danificada não descarta os tabuleiros válidos das outras fases.
+    if (Array.isArray(data.drafts)) {
+      recovered.drafts = LEVELS.map((level, index) => isUnlocked(recovered, index)
+        && Core.validateSave(level, data.drafts[index]) ? {...data.drafts[index]} : null);
     }
+    const active = data.active;
+    if (active && isUnlocked(recovered, active.index) && Core.validateSave(LEVELS[active.index], active.edits)) {
+      recovered.active = {index: active.index, edits: {...active.edits}};
+      recovered.drafts[active.index] = {...active.edits};
+    }
+    return recovered;
   }
 
   function load(storageOverride) {
@@ -67,7 +83,7 @@ const Storage = (() => {
       let available = true;
       try { target.setItem(KEY + '-recovery', raw); } catch (_) { available = false; }
       return { data: recover(parsed), available,
-        message: 'Parte do salvamento precisava de recuperação. Os recordes válidos foram mantidos.' };
+        message: 'Parte do salvamento precisava de recuperação. Os recordes e tabuleiros válidos foram mantidos.' };
     }
   }
 

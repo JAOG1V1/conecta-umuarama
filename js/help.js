@@ -3,7 +3,7 @@ function showHelp() {
   openModal('Como jogar',[
     '<ol>',
     '<li>Encontre a casa de cada morador e seu destino, identificados por letras.</li>',
-    '<li>Selecione uma ferramenta e clique nas células do mapa.</li>',
+    '<li>Selecione uma ferramenta. O contorno pontilhado indica onde ela pode ser usada. Aponte ou use o teclado para consultar custo e saldo antes de agir.</li>',
     '<li>Construa calçadas em terreno livre (1), faixas sobre ruas (3) e rampas sobre escadas (2).</li>',
     '<li>Use “Testar rotas” para observar os moradores. Todos precisam chegar dentro do orçamento.</li>',
     '</ol>',
@@ -16,9 +16,10 @@ function showHelp() {
     '<p><b>Símbolos:</b> + marca uma obra sua, que pode ser removida e reembolsada; E é uma escada; R é uma rampa.</p>',
     '<p><b>Quando faltar caminho:</b> o tracejado mostra onde o morador consegue chegar agora. Escolha seu nome junto dos controles e abra “Ver pista” para ler a explicação. A marca laranja com ? aponta a célula citada no mapa. A pista não entrega uma solução completa.</p>',
     '<p><b>Seu ritmo:</b> durante a animação, clique em Concluir chegada para ver o resultado imediatamente. Um teste com falha mostra as pistas sem esperar uma animação.</p>',
-    '<p><b>Comparar soluções:</b> durante uma fase, abra Comparar e guarde sua construção como A. Volte ao mapa e experimente outra solução, que aparece como B. Compare gasto e passos de cada morador. Reiniciar preserva a referência; Usar A no mapa permite retomá-la e pode ser desfeito.</p>',
+    '<p><b>Comparar soluções:</b> durante uma fase, abra Comparar e guarde sua construção como A. Depois de vencer, Guardar e experimentar também guarda a solução. Altere o mapa para criar B e compare gasto e passos de cada morador. Reiniciar preserva a referência; Usar A no mapa permite retomá-la e pode ser desfeito.</p>',
+    '<p><b>Volte quando quiser:</b> cada fase guarda seu próprio tabuleiro. Trocar de fase preserva as construções; Reiniciar limpa apenas a fase aberta. Se o navegador bloquear o salvamento, os tabuleiros ficam disponíveis só nesta sessão.</p>',
     '<p>',
-    '<b>Teclado:</b> Tab chega ao mapa; setas escolhem células; Enter ou Espaço executam a ferramenta. Remover devolve o custo completo. Não há limite de tentativas.</p>'
+    '<b>Teclado:</b> Tab chega ao mapa; setas escolhem células; Enter ou Espaço executam a ferramenta. As teclas 1 a 4 escolhem Calçada, Faixa, Rampa e Remover. Ctrl ou Cmd + Z desfaz; com Shift, refaz. Desfazer e Refazer também têm botões. Remover devolve o custo completo. Não há limite de tentativas.</p>'
   ].join(''),[{label:'Entendi',primary:true,action:()=>{}}]);
 }
 function showCredits() {

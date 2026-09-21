@@ -4,6 +4,57 @@ const Views = (() => {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[character]);
 
+  function campaignSummary(levels, progress) {
+    const campaign = Array.isArray(levels) ? levels : [];
+    const best = Array.isArray(progress?.best) ? progress.best : [];
+    const shortBest = Array.isArray(progress?.shortBest) ? progress.shortBest : [];
+    const scores = campaign.map((_, index) => Number.isInteger(best[index])
+      && best[index] >= 700 && best[index] <= 1000 ? best[index] : 0);
+    const hasEconomy = (level, index) => !level.tutorial && scores[index] > 0
+      && scores[index] >= Core.economyScore(level, level.efficiencyCost);
+    const hasShortRoutes = (level, index) => !level.tutorial && scores[index] > 0
+      && shortBest[index] === true;
+    const economyBadges = campaign.filter(hasEconomy).length;
+    const shortBadges = campaign.filter(hasShortRoutes).length;
+    const unfinished = scores.findIndex(score => score === 0);
+    const missingBadge = campaign.findIndex((level, index) => !level.tutorial
+      && (!hasEconomy(level, index) || !hasShortRoutes(level, index)));
+    // Os recordes de economia e percurso podem vir de soluções diferentes.
+    // O resumo usa as conquistas salvas, sem confundir a obra atual com recordes.
+    return {
+      completed: scores.filter(score => score > 0).length,
+      totalLevels: campaign.length,
+      economyBadges,
+      shortBadges,
+      totalBadges: economyBadges + shortBadges,
+      maxBadges: campaign.filter(level => !level.tutorial).length * 2,
+      totalPoints: scores.reduce((sum, score) => sum + score, 0),
+      nextIndex: unfinished !== -1 ? unfinished : missingBadge !== -1 ? missingBadge : null
+    };
+  }
+
+  function campaignProgress(levels, progress) {
+    const summary = campaignSummary(levels, progress);
+    const next = summary.nextIndex === null ? null : levels[summary.nextIndex];
+    const suggestion = !summary.totalLevels ? 'Nenhuma fase disponível.'
+      : summary.completed < summary.totalLevels
+        ? `Próxima conexão: ${escape(next.id)}. ${escape(next.title)}.`
+        : next ? `Campanha concluída! Explore os selos restantes em ${escape(next.title)}.`
+          : 'Todos os caminhos e selos concluídos. Experimente novas soluções para o bairro.';
+    return `<section class="campaign-progress" aria-label="Progresso da campanha">
+      <div class="campaign-heading"><h3>Seu bairro em movimento</h3>
+        <span>${summary.totalPoints} pontos em recordes</span></div>
+      <div class="campaign-stats">
+        <p><b>${summary.completed}/${summary.totalLevels}</b> fases concluídas</p>
+        <p><b>${summary.totalBadges}/${summary.maxBadges}</b> selos conquistados</p>
+      </div>
+      <progress class="campaign-meter" value="${summary.completed}" max="${summary.totalLevels || 1}"
+        aria-label="Fases concluídas" aria-valuetext="${summary.completed} de ${summary.totalLevels} fases concluídas"></progress>
+      <p class="campaign-badge-summary">${summary.economyBadges} de economia · ${summary.shortBadges} de percursos curtos</p>
+      <p class="campaign-next">${suggestion}</p>
+    </section>`;
+  }
+
   function personCard(person, index, level, route) {
     const status = !route ? 'Rota ainda não testada'
       : route.path ? 'Conectado · ' + (route.path.length - 1) + ' passos' : 'Ainda sem caminho';
@@ -25,10 +76,14 @@ const Views = (() => {
     const unlocked = Storage.isUnlocked(progress, index);
     const best = progress.best[index];
     const economical = best >= Core.economyScore(level, level.efficiencyCost);
+    const draft = progress.drafts?.[index];
+    const saved = unlocked && draft && Core.validateSave(level, draft) && Object.keys(draft).length > 0;
     const label = best ? 'Recorde de economia: ' + best + ' pontos'
       : unlocked ? 'Disponível para explorar' : 'Conclua a fase anterior';
     return `<button class="level-card" data-level="${index}" ${unlocked ? '' : 'disabled'}>
       <span><b>${level.id}. ${escape(level.title)}</b><small>${label}</small>
+        ${best ? '<span class="level-state">Concluída</span>' : ''}
+        ${saved ? '<span class="level-state saved">Obra guardada</span>' : ''}
         ${!level.tutorial && economical ? '<span class="economy-badge">✦ Economia</span>' : ''}
         ${!level.tutorial && progress.shortBest?.[index] ? '<span class="economy-badge">✦ Percursos curtos</span>' : ''}
       </span><span aria-hidden="true">${unlocked ? '→' : '—'}</span>
@@ -106,5 +161,5 @@ const Views = (() => {
         <div class="result-note"><b>Do bairro do jogo ao seu dia a dia</b><p>No caminho que você faz todo dia, onde uma escada ou uma rua sem faixa mudaria a rota de alguém?</p></div>` : ''}
     </div>`;
   }
-  return Object.freeze({escape, personCard, levelCard, challenges, hintBarrier, reachExplanation, result});
+  return Object.freeze({escape, campaignSummary, campaignProgress, personCard, levelCard, challenges, hintBarrier, reachExplanation, result});
 })();

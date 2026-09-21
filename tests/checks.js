@@ -13,7 +13,10 @@ const runChecks = () => {
     people: [{ name: "Pessoa", from: "A", to: "X", stairs, color: "#123456" }],
     destinations: { X: "Destino" }, solution: {}
   });
-  const progress = (best = [0, 0, 0, 0, 0], active = null) => ({ version: 1, best: [...best], active });
+  const progress = (best = [0, 0, 0, 0, 0], active = null) => ({
+    version: 1, best: [...best], active,
+    drafts: LEVELS.map((_, index) => active?.index === index ? {...active.edits} : null)
+  });
   const valid = data => { const result = Storage.validateProgress(data); assert(!!result); return result; };
   const invalid = data => {
     let rejected = false;
@@ -251,6 +254,111 @@ const runChecks = () => {
     const loaded=Storage.load(fake).data;
     equal(loaded.best,data.best); equal(loaded.shortBest,data.shortBest);
     assert(loaded.active===null && loaded.version===1);
+  });
+  test('Partida antiga migra o tabuleiro ativo sem apagar recordes ou pedir recuperação', () => {
+    const legacy={version:1,best:[820,0,0,0,0],active:{index:1,edits:{'2,1':'path'}},shortBest:[false,false,false,false,false]};
+    const before=JSON.stringify(legacy),fake=fakeStorage(before),result=Storage.load(fake);
+    assert(result.available&&!result.message&&fake.writes===0&&fake.removed===0);
+    equal(result.data.best,legacy.best);equal(result.data.shortBest,legacy.shortBest);
+    equal(result.data.active,legacy.active);
+    equal(result.data.drafts,[null,{'2,1':'path'},null,null,null]);
+    assert(JSON.stringify(legacy)===before&&result.data.version===1);
+    const noActive=Storage.validateProgress({version:1,best:[820,0,0,0,0],active:null});
+    equal(noActive.drafts,[null,null,null,null,null]);
+  });
+  test('Rascunhos por fase sobrevivem à troca do ativo e à recarga', () => {
+    const data=progress([820,755,0,0,0],{index:0,edits:{'2,2':'path'}});
+    data.drafts[1]={'2,1':'path','3,1':'path'};
+    const fake=fakeStorage();assert(Storage.save(data,fake).saved);
+    const restored=Storage.load(fake).data;
+    restored.active={index:1,edits:{...restored.drafts[1],'4,1':'path'}};
+    assert(Storage.save(restored,fake).saved);
+    const again=Storage.load(fake).data;
+    equal(again.drafts[0],{'2,2':'path'});
+    equal(again.drafts[1],{'2,1':'path','3,1':'path','4,1':'path'});
+    equal(again.active,{index:1,edits:again.drafts[1]});
+    equal(again.best,data.best);assert(again.drafts[2]===null);
+  });
+  test('Reiniciar a fase ativa salva um mapa vazio sem apagar outros rascunhos', () => {
+    const data=progress([820,755,0,0,0],{index:1,edits:{}});
+    data.drafts[0]={...LEVELS[0].solution};data.drafts[1]={...LEVELS[1].solution};
+    const fake=fakeStorage();assert(Storage.save(data,fake).saved);
+    const restored=Storage.load(fake).data;
+    equal(restored.drafts[0],LEVELS[0].solution);equal(restored.drafts[1],{});
+    equal(restored.best,data.best);equal(restored.active,{index:1,edits:{}});
+  });
+  test('Ativo, rascunhos, entradas e carregamentos possuem cópias independentes', () => {
+    const data=progress([820,755,0,0,0],{index:1,edits:{'2,1':'path'}});
+    data.drafts[0]={'2,2':'path'};
+    const result=Storage.validateProgress(data);
+    assert(result.drafts!==data.drafts&&result.drafts[0]!==data.drafts[0]);
+    assert(result.active.edits!==data.active.edits&&result.active.edits!==result.drafts[1]);
+    result.active.edits['3,1']='path';delete result.drafts[0]['2,2'];
+    equal(data.active.edits,{'2,1':'path'});equal(result.drafts[1],{'2,1':'path'});
+    equal(data.drafts[0],{'2,2':'path'});
+    const fake=fakeStorage();Storage.save(data,fake);
+    const first=Storage.load(fake).data,second=Storage.load(fake).data;
+    first.drafts[0]['2,3']='path';assert(!second.drafts[0]['2,3']);
+    const emptyA=Storage.empty(),emptyB=Storage.empty();emptyA.drafts[0]={};assert(emptyB.drafts[0]===null);
+  });
+  test('Rascunho corrompido é descartado isoladamente e o original é preservado', () => {
+    const data=progress([820,755,760,0,0],{index:2,edits:{'1,2':'path'}});
+    data.drafts[0]={...LEVELS[0].solution};data.drafts[1]={'99,99':'path'};
+    data.shortBest=[false,true,true,false,false];
+    const key='conecta-umuarama-v1',raw=JSON.stringify(data),items=new Map([[key,raw]]);
+    const fake={getItem(name){return items.get(name)??null;},setItem(name,value){items.set(name,value);}};
+    const result=Storage.load(fake);
+    assert(result.available&&!!result.message);equal(result.data.best,data.best);equal(result.data.shortBest,data.shortBest);
+    equal(result.data.drafts[0],LEVELS[0].solution);assert(result.data.drafts[1]===null);
+    equal(result.data.drafts[2],{'1,2':'path'});equal(result.data.active,data.active);
+    assert(items.get(key)===raw&&items.get(key+'-recovery')===raw);
+    valid(result.data);
+  });
+  test('Tabuleiro ativo inválido não destrói rascunhos válidos de outras fases', () => {
+    const data=progress([820,755,0,0,0],{index:2,edits:{'0,0':'path'}});
+    data.drafts[0]={'2,2':'path'};data.drafts[1]={'2,1':'path'};
+    const recovered=Storage.recover(data);
+    assert(recovered.active===null&&recovered.drafts[2]===null);
+    equal(recovered.drafts[0],{'2,2':'path'});equal(recovered.drafts[1],{'2,1':'path'});
+    equal(recovered.best,data.best);valid(recovered);
+  });
+  test('Rascunhos obedecem terreno, coordenadas, orçamento e fases desbloqueadas', () => {
+    const tooExpensive={'1,1':'path','1,2':'path','1,4':'path','1,5':'path','2,2':'path','2,3':'path'};
+    for(const edits of [[],{'-1,0':'path'},{'2,2':'ramp'},tooExpensive]) {
+      const data=progress();data.drafts[0]=edits;invalid(data);
+      assert(Storage.recover(data).drafts[0]===null);
+    }
+    const locked=progress();locked.drafts[2]={};invalid(locked);
+    assert(Storage.recover(locked).drafts[2]===null&&!Storage.isUnlocked(Storage.recover(locked),2));
+  });
+  test('Recuperação ajusta o tamanho dos rascunhos e mantém fases compatíveis', () => {
+    const data={version:1,best:[820,755,0,0,0],active:null,drafts:[{'2,2':'path'},null,{'1,2':'path'}]};
+    invalid(data);
+    const recovered=Storage.recover(data);
+    equal(recovered.drafts,[{'2,2':'path'},null,{'1,2':'path'},null,null]);valid(recovered);
+    const invalidShape={...data,drafts:{0:{'2,2':'path'}}};invalid(invalidShape);
+    equal(Storage.recover(invalidShape).drafts,[null,null,null,null,null]);
+    const sparse=progress();sparse.drafts=new Array(LEVELS.length);invalid(sparse);
+  });
+  test('Salvar rascunho inválido não substitui partida anterior nem modifica a entrada', () => {
+    const data=progress([820,0,0,0,0]);data.drafts[0]={'2,2':'ramp'};
+    const before=JSON.stringify(data),fake=fakeStorage('anterior'),result=Storage.save(data,fake);
+    assert(!result.saved&&fake.raw==='anterior'&&fake.writes===0&&JSON.stringify(data)===before);
+  });
+  test('Recuperação mantém o rascunho da própria fase quando somente o ativo está danificado', () => {
+    const data=progress([820,0,0,0,0],{index:1,edits:{'99,99':'path'}});
+    data.drafts[1]={'2,1':'path'};
+    const recovered=Storage.recover(data);
+    assert(recovered.active===null);equal(recovered.drafts[1],{'2,1':'path'});
+    equal(recovered.best,data.best);valid(recovered);
+  });
+  test('Vetores com posições ausentes não geram um salvamento inválido', () => {
+    const scores=progress();delete scores.best[1];invalid(scores);
+    const badges={...progress([820,0,0,0,0]),shortBest:new Array(LEVELS.length)};invalid(badges);
+    const fake=fakeStorage('anterior');
+    assert(!Storage.save(scores,fake).saved&&!Storage.save(badges,fake).saved);
+    assert(fake.raw==='anterior'&&fake.writes===0);
+    valid(Storage.recover(scores));valid(Storage.recover(badges));
   });
   test('Fase 4 oferece selos diferentes para atalho e contorno', () => {
     const level=LEVELS[3];
