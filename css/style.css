@@ -927,6 +927,8 @@ dialog code {
 .campaign-next {font-size:14px;font-weight:600;margin:12px 0 0}
 .level-state {display:inline-block;font-size:11px;font-weight:650;background:#e6ecd9;color:#2a5037;border-radius:5px;margin:5px 6px 0 0;padding:2px 6px}
 .level-state.saved {background:#f2ead7;color:#665127}
+.level-card.current {border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
+.level-state.current {background:var(--green);color:#fffdf8}
 @media(max-width:600px) {
   .tool kbd {display:none}
   .build-guide {min-height:63px;margin-bottom:8px;padding:7px 9px}
