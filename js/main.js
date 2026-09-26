@@ -289,6 +289,16 @@ function confirmReset(action,index=state.index) {
     {label:'Continuar jogando',action:()=>{}},{label:'Recomeçar',primary:true,action}
   ]);
 }
+function tutorialGuidance() {
+  // A orientação acompanha o mapa, inclusive ao recuperar uma partida salva.
+  const ready=Core.routes(currentLevel(),state.edits).every(route=>route.path);
+  const started=Object.keys(state.edits).length>0;
+  const step=ready?3:started?2:1;
+  const message=ready ? 'A rota está pronta! Pressione “Testar rotas” para ver Lia caminhar.'
+    : started ? 'Complete o caminho entre A e X. Remover devolve o custo das peças que você não precisa.'
+      : 'Construa as três calçadas entre a casa A e a escola X.';
+  return (state.tutorial?step+'/3 · ':'')+message;
+}
 function begin(index,edits={},showTutorial=false) {
   if (!Storage.isUnlocked(progress,index) || !Core.validateSave(LEVELS[index],edits)) {
     feedback('Conclua a fase anterior antes de abrir este tabuleiro.',true);
@@ -304,10 +314,10 @@ function begin(index,edits={},showTutorial=false) {
   window.scrollTo?.({top:0,behavior:'instant'});
   $('hintDetails').open=false;
   render();saveProgress();
-  feedback(index===0?'1/3 · Construa as três calçadas entre a casa A e a escola X.':'Escolha uma ferramenta e construa uma rota para cada morador.');
+  feedback(currentLevel().tutorial?tutorialGuidance():'Escolha uma ferramenta e construa uma rota para cada morador.');
   $('phaseTitle').tabIndex=-1;$('phaseTitle').focus({preventScroll:true});
-  if(showTutorial)openModal('Sua primeira conexão','<p><b>1.</b> A casa de Lia tem a letra A; a escola tem a letra X.</p><p><b>2.</b> Com a ferramenta Calçada, clique nas três células livres entre elas. Cada peça custa 1.</p><p><b>3.</b> Use “Testar rotas” e acompanhe Lia até a escola. Você pode desfazer qualquer construção.</p>',[
-    {label:'Pular tutorial',action:()=>{state.tutorial=false;feedback('Construa um caminho entre A e X.');}},
+  if(showTutorial&&!Object.keys(edits).length)openModal('Sua primeira conexão','<p><b>1.</b> A casa de Lia tem a letra A; a escola tem a letra X.</p><p><b>2.</b> Com a ferramenta Calçada, clique nas três células livres entre elas. Cada peça custa 1.</p><p><b>3.</b> Use “Testar rotas” e acompanhe Lia até a escola. Você pode desfazer qualquer construção.</p>',[
+    {label:'Pular tutorial',action:()=>{state.tutorial=false;feedback(tutorialGuidance());}},
     {label:'Vamos construir',primary:true,action:()=>{}}
   ]);
 }
@@ -315,7 +325,7 @@ function chooseLevels() {
   const intro = Views.campaignProgress(LEVELS,progress)
     + '<p>Complete uma fase para abrir a próxima. Cada tabuleiro é guardado ao trocar de fase.</p>';
   openModal('Os caminhos do seu bairro', intro
-    + LEVELS.map((level,index) => Views.levelCard(level,index,progress)).join(''));
+    + LEVELS.map((level,index) => Views.levelCard(level,index,progress,$('game').hidden?null:state.index)).join(''));
 }
 
 function editCell(r,c) {
@@ -323,10 +333,7 @@ function editCell(r,c) {
   if(!result.ok){feedback(result.message,true);return;}
   cancelMotion(true);state.undo.push({...state.edits});state.redo=[];state.edits=result.edits;
   render();saveProgress();
-  if(state.tutorial&&state.index===0) {
-    const ready=Core.score(currentLevel(),state.edits)>0;
-    feedback(ready?'3/3 · A rota está pronta! Pressione “Testar rotas” para ver Lia caminhar.':'2/3 · Complete as calçadas entre A e X. Você pode usar Desfazer para corrigir.');
-  } else feedback(result.message);
+  feedback(currentLevel().tutorial?tutorialGuidance():result.message);
 }
 function drawRoutes(filter=null) {
   const level=currentLevel(),h=level.map.length,w=level.map[0].length;
@@ -437,11 +444,22 @@ $('board').addEventListener('keydown',event=>{
   else if(event.key==='ArrowLeft')c=Math.max(0,c-1);else if(event.key==='ArrowRight')c=Math.min(width-1,c+1);
   else if(event.key==='Home')c=0;else if(event.key==='End')c=width-1;else return;
   event.preventDefault();b.tabIndex=-1;state.focus=r*width+c;const next=$('board').children[state.focus];next.tabIndex=0;next.focus({preventScroll:true});
-  next.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});
 });
-for(const type of ['pointerover','focusin'])$('board').addEventListener(type,event=>{
+function revealBoardCell(tile) {
+  const narrow=window.matchMedia('(max-width:600px)').matches;
+  const controls=document.querySelector('.play-controls');
+  // As alturas mudam com as pistas e com a quebra dos textos. Reservar o espaço
+  // real dos controles impede que o foco fique escondido atrás do painel fixo.
+  tile.style.scrollMarginTop=narrow ? (($('feedback').offsetHeight||0)+12)+'px' : '12px';
+  tile.style.scrollMarginBottom=narrow ? ((controls?.offsetHeight||0)+12)+'px' : '12px';
+  tile.scrollIntoView?.({block:'nearest',inline:'nearest',behavior:'instant'});
+}
+for(const type of ['pointermove','focusin'])$('board').addEventListener(type,event=>{
   const tile=event.target.closest('button[data-row]');
-  if(tile)previewCell(Number(tile.dataset.row),Number(tile.dataset.col));
+  if(tile) {
+    previewCell(Number(tile.dataset.row),Number(tile.dataset.col));
+    if(type==='focusin')revealBoardCell(tile);
+  }
 });
 $('board').addEventListener('pointerleave',renderBuildOptions);
 $('board').addEventListener('focusout',event=>{
