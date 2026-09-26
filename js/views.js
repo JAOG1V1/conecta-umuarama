@@ -72,16 +72,18 @@ const Views = (() => {
     </div>`;
   }
 
-  function levelCard(level, index, progress) {
+  function levelCard(level, index, progress, currentIndex = null) {
     const unlocked = Storage.isUnlocked(progress, index);
+    const current = unlocked && index === currentIndex;
     const best = progress.best[index];
     const economical = best >= Core.economyScore(level, level.efficiencyCost);
     const draft = progress.drafts?.[index];
     const saved = unlocked && draft && Core.validateSave(level, draft) && Object.keys(draft).length > 0;
     const label = best ? 'Recorde de economia: ' + best + ' pontos'
       : unlocked ? 'Disponível para explorar' : 'Conclua a fase anterior';
-    return `<button class="level-card" data-level="${index}" ${unlocked ? '' : 'disabled'}>
+    return `<button class="level-card${current ? ' current' : ''}" data-level="${index}" ${current ? 'aria-current="step"' : ''} ${unlocked ? '' : 'disabled'}>
       <span><b>${level.id}. ${escape(level.title)}</b><small>${label}</small>
+        ${current ? '<span class="level-state current">Você está aqui</span>' : ''}
         ${best ? '<span class="level-state">Concluída</span>' : ''}
         ${saved ? '<span class="level-state saved">Obra guardada</span>' : ''}
         ${!level.tutorial && economical ? '<span class="economy-badge">✦ Economia</span>' : ''}

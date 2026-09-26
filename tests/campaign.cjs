@@ -151,5 +151,42 @@ test('Resumo e cartões não alteram o progresso salvo', () => {
   assert.equal(run('JSON.stringify(progress)'), before);
 });
 
+test('Seletor marca apenas a fase atual com texto e aria-current', () => {
+  run('progress.best = [820,755,0,0,0];');
+  const cards = value('LEVELS.map((level,index) => Views.levelCard(level,index,progress,1))');
+  assert.equal(cards.filter(html => html.includes('aria-current="step"')).length, 1);
+  assert.equal(cards.filter(html => html.includes('Você está aqui')).length, 1);
+  assert.match(cards[1], /class="level-card current"/);
+  assert.match(cards[1], /<span class="level-state current">Você está aqui<\/span>/);
+});
+
+test('Fase atual preserva conclusão, obra guardada e selos sem alterar o progresso', () => {
+  run(`progress.best = [820,755,0,0,0];
+    progress.drafts[1] = {...LEVELS[1].solution};
+    progress.shortBest = [false,true,false,false,false];`);
+  const before = run('JSON.stringify(progress)');
+  const html = run('Views.levelCard(LEVELS[1], 1, progress, 1)');
+  for (const text of ['Você está aqui', 'Concluída', 'Obra guardada', '✦ Economia', '✦ Percursos curtos']) {
+    assert(html.includes(text), text + ' deve continuar visível');
+  }
+  assert.equal(run('JSON.stringify(progress)'), before);
+});
+
+test('Cartões fora de uma partida não apresentam fase atual', () => {
+  run('progress.active = {index:0, edits:{}};');
+  for (const current of ['', ', null']) {
+    const html = run(`Views.levelCard(LEVELS[0], 0, progress${current})`);
+    assert(!html.includes('aria-current') && !html.includes('Você está aqui'));
+    assert.match(html, /class="level-card"/);
+  }
+});
+
+test('Fase bloqueada não pode ser anunciada como atual', () => {
+  const html = run('Views.levelCard(LEVELS[2], 2, progress, 2)');
+  assert.match(html, / disabled/);
+  assert(!html.includes('aria-current') && !html.includes('Você está aqui'));
+  assert.match(html, /class="level-card"/);
+});
+
 console.log(`\n${passed}/${passed + failed} testes de campanha passaram.`);
 process.exitCode = failed ? 1 : 0;

@@ -776,5 +776,45 @@ test('Campanha na tela inicial atualiza após vitória e preserva recordes ao ed
   assert.match(game.nodes.get('campaignProgress').innerHTML,/<b>1\/5<\/b>/);
 });
 
+test('Retomar tutorial pronto orienta testar e preserva construção e recordes',()=>{
+  const game=app();game.run('begin(0,LEVELS[0].solution);testRoutes();');game.flush();closeDialog(game);
+  const saved=app(false,game.memory);saved.nodes.get('continue').onclick();
+  assert.match(saved.nodes.get('feedback').textContent,/A rota está pronta/);
+  assert.doesNotMatch(saved.nodes.get('feedback').textContent,/Construa as três|1\/3/);
+  assert.equal(saved.run('Core.cost(state.edits)'),3);
+  assert.equal(saved.run('progress.best[0]'),820);
+  assert.equal(saved.nodes.get('modal').open,false);
+});
+
+test('Retomar tutorial parcial orienta continuar sem repetir o primeiro passo',()=>{
+  const game=app();game.run('begin(0);editCell(2,2);');
+  const saved=app(false,game.memory);saved.nodes.get('continue').onclick();
+  assert.match(saved.nodes.get('feedback').textContent,/Complete o caminho/);
+  assert.equal(saved.run('Core.cost(state.edits)'),1);
+  saved.run('editCell(2,3);editCell(2,4);');
+  assert.match(saved.nodes.get('feedback').textContent,/A rota está pronta/);
+  saved.run("state.tool='erase';editCell(2,3);");
+  assert.match(saved.nodes.get('feedback').textContent,/Complete o caminho/);
+  assert.equal(saved.run('progress.best[0]'),0);
+});
+
+test('Tutorial vazio mantém a introdução; rascunho pelo seletor não repete a janela',()=>{
+  const game=app();game.nodes.get('start').onclick();
+  assert.equal(game.nodes.get('modal').open,true);
+  assert.match(game.nodes.get('feedback').textContent,/1\/3/);
+  chooseAction(game,'Vamos construir');game.run('editCell(2,2);');
+  game.nodes.get('backHome').onclick();switchLevel(game,0);
+  assert.equal(game.nodes.get('modal').open,false);
+  assert.match(game.nodes.get('feedback').textContent,/2\/3.*Complete o caminho/);
+});
+
+test('Seletor marca apenas a fase aberta e não anuncia localização na tela inicial',()=>{
+  const game=app();game.unlock();game.run('begin(2);chooseLevels();');
+  assert.equal((game.nodes.get('modalBody').innerHTML.match(/aria-current="step"/g)||[]).length,1);
+  assert.match(game.nodes.get('modalBody').innerHTML,/data-level="2"[^>]*aria-current="step"/);
+  closeDialog(game);game.nodes.get('backHome').onclick();game.run('chooseLevels();');
+  assert.doesNotMatch(game.nodes.get('modalBody').innerHTML,/aria-current|Você está aqui/);
+});
+
 console.log('\n' + passed + '/' + (passed + failed) + ' testes de integração passaram.');
 process.exitCode = failed ? 1 : 0;

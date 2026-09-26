@@ -1,20 +1,32 @@
 # Verificações
 
-Versão 1.7.0 · verificações locais em 21/09/2026.
+Versão 1.7.1 · verificações locais em 22/09/2026.
 
 ## Testes automatizados
 
 | Grupo | Resultado | Cobertura |
 | --- | ---: | --- |
 | Lógica | 94/94 | Soluções das cinco fases, alternativas, custos, metas, rotas, pontuação, migração e recuperação isolada de rascunhos |
-| Interface simulada | 67/67 | Prévia, construção, desfazer/refazer, atalhos, diálogos, animações, troca de fase, recarga e comparação A/B |
-| Campanha | 15/15 | Resumo de fases e selos, próxima conexão, cartões, dados inválidos e ausência de mutações |
+| Interface simulada | 71/71 | Prévia, construção, desfazer/refazer, atalhos, diálogos, animações, troca de fase, recarga, comparação A/B e retomada do tutorial |
+| Campanha | 19/19 | Resumo de fases e selos, próxima conexão, cartões, fase atual, dados inválidos e ausência de mutações |
 
-Os **176 testes passaram** em execução local com Node.js. A sintaxe dos 12 scripts do jogo e dos cinco scripts de testes também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
+Os **184 testes passaram** em execução local com Node.js. A sintaxe dos 12 scripts do jogo e dos cinco scripts de testes também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
 
 O workflow [Testes do jogo](https://github.com/JAOG1V1/conecta-umuarama/actions/workflows/tests.yml) está configurado para executar `npm test` em alterações da branch principal e em pull requests, com Node.js 24. O estado de cada execução remota deve ser consultado no GitHub Actions; os números acima são da execução local.
 
-## Conferência da versão
+## Conferência da versão 1.7.1
+
+- Retomada do tutorial com a rota pronta conferida no navegador: as três calçadas são preservadas e o aviso orienta usar Testar rotas.
+- Testes automatizados cobrem também o tutorial vazio, a obra parcial, a mudança de orientação ao construir ou remover e a preservação de recordes.
+- Seletor de fases conferido com “Você está aqui” na fase aberta. Os testes verificam que a marca não aparece ao abrir o seletor pela tela inicial ou em fases bloqueadas.
+- Navegação por teclado conferida em 548 × 912 e 390 × 844 pixels: a célula focada permanece acima dos controles. Em 390 × 844, o retorno à primeira linha também mantém a célula abaixo do aviso fixo.
+- A prévia permanece na célula focada durante a rolagem por teclado, mesmo com o ponteiro parado sobre o mapa. Sem erros ou avisos no console nessa sessão.
+
+As regras, as cinco fases e o formato de salvamento foram preservados.
+
+## Conferências anteriores — versão 1.7.0
+
+Os itens abaixo foram conferidos em 21/09/2026 e registram a validação da versão anterior; não representam uma nova execução visual na versão 1.7.1.
 
 - 68 referências locais de HTML, documentação, CSS e JavaScript conferidas, incluindo nomes de arquivos e subpastas. Sem IDs duplicados ou estilos inline nos arquivos HTML.
 - Prévia de custo e navegação por teclado conferidas no navegador, incluindo construção, Desfazer e Refazer.

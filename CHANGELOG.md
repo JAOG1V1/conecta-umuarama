@@ -2,6 +2,15 @@
 
 Mudanças do Conecta Umuarama, da mais recente para a mais antiga. As datas aparecem quando estão registradas nas verificações do projeto. Este histórico foi organizado a partir da documentação existente; não representa uma sequência de commits antigos no GitHub.
 
+## 1.7.1 — 26/09/2026
+
+### Corrigido
+
+- Tutorial reconhece obras guardadas: orienta continuar um caminho parcial ou testar uma rota pronta, sem repetir a introdução de um tabuleiro vazio.
+- Navegação por teclado mantém a célula focada visível entre os avisos e os controles fixos em telas estreitas. A prévia acompanha o foco quando a página rola.
+- Seletor de fases identifica o tabuleiro aberto com “Você está aqui”, preservando as indicações de conclusão e de obra guardada.
+- Oito testes de regressão adicionados; os 184 testes locais passaram.
+
 ## 1.7.0 — 21/09/2026
 
 ### Adicionado
