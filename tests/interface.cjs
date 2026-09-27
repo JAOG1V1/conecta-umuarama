@@ -816,5 +816,25 @@ test('Seletor marca apenas a fase aberta e não anuncia localização na tela in
   assert.doesNotMatch(game.nodes.get('modalBody').innerHTML,/aria-current|Você está aqui/);
 });
 
+test('Clique rejeitado e setas mantêm uma única célula na sequência de Tab',()=>{
+  const game=app();game.run('begin(0);');
+  const board=game.nodes.get('board');
+  const onlyTabStop=index=>{
+    assert.deepEqual(board.children.map((tile,i)=>tile.tabIndex===0?i:null).filter(i=>i!==null),[index]);
+    assert.equal(game.run('state.focus'),index);
+    assert.equal(game.document.activeElement,board.children[index]);
+  };
+  const tree=board.children[0];tree.focus();
+  board.events.click[0]({target:{closest:()=>tree}});
+  onlyTabStop(0);
+  assert.equal(game.run('Object.keys(state.edits).length'),0);
+  for(const [key,index] of [['ArrowRight',1],['ArrowDown',8],['Home',7],['End',13]]) {
+    const current=game.document.activeElement;let prevented=false;
+    board.events.keydown[0]({key,target:{closest:()=>current},preventDefault(){prevented=true;}});
+    assert(prevented);onlyTabStop(index);
+  }
+  assert.equal(game.run('Core.cost(state.edits)'),0);
+});
+
 console.log('\n' + passed + '/' + (passed + failed) + ' testes de integração passaram.');
 process.exitCode = failed ? 1 : 0;
