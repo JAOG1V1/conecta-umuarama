@@ -2,6 +2,18 @@
 
 Mudanças do Conecta Umuarama, da mais recente para a mais antiga. As datas aparecem quando estão registradas nas verificações do projeto. Este histórico foi organizado a partir da documentação existente; não representa uma sequência de commits antigos no GitHub.
 
+## 1.7.2 — 27/09/2026
+
+### Corrigido
+
+- Clicar em uma célula bloqueada e continuar com as setas mantém uma única entrada de teclado no mapa, sem paradas extras ao usar Tab.
+- Nota de origem das ilustrações contextualizada com o redimensionamento realizado na versão 1.4.
+
+### Verificado
+
+- Campanha completa jogada pela interface, incluindo conclusão, selos, comparação e retomada da última fase.
+- 185 testes locais aprovados, incluindo uma regressão da navegação mista com mouse e teclado.
+
 ## 1.7.1 — 26/09/2026
 
 ### Corrigido

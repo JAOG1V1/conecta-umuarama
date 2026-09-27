@@ -1,6 +1,6 @@
 {
   "mode": "built-in image_gen",
-  "note": "Exactly three separate calls, generated concurrently, without variants or retries. Original alpha preserved; source files copied unmodified.",
+  "note": "Exactly three separate calls, generated concurrently, without variants or retries. The generated 1254 x 1254 PNGs were initially copied unmodified. In version 1.4, the distributed files were resized to 320 x 320 using bicubic interpolation, preserving their proportions and alpha transparency. See docs/CREDITOS.md for the asset history.",
   "prompts": [
     {
       "name": "lia",

@@ -1,20 +1,32 @@
 # Verificações
 
-Versão 1.7.1 · verificações locais em 22/09/2026.
+Versão 1.7.2 · revisão local em 27/09/2026.
 
 ## Testes automatizados
 
 | Grupo | Resultado | Cobertura |
 | --- | ---: | --- |
 | Lógica | 94/94 | Soluções das cinco fases, alternativas, custos, metas, rotas, pontuação, migração e recuperação isolada de rascunhos |
-| Interface simulada | 71/71 | Prévia, construção, desfazer/refazer, atalhos, diálogos, animações, troca de fase, recarga, comparação A/B e retomada do tutorial |
+| Interface simulada | 72/72 | Prévia, construção, desfazer/refazer, atalhos, diálogos, animações, troca de fase, recarga, comparação A/B, retomada do tutorial e entrada única de teclado no mapa |
 | Campanha | 19/19 | Resumo de fases e selos, próxima conexão, cartões, fase atual, dados inválidos e ausência de mutações |
 
-Os **184 testes passaram** em execução local com Node.js. A sintaxe dos 12 scripts do jogo e dos cinco scripts de testes também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
+Os **185 testes passaram** em execução local com Node.js. A sintaxe dos 12 scripts do jogo e dos cinco scripts de testes também foi verificada. Os testes usam armazenamento simulado e não modificam o progresso do jogador.
 
 O workflow [Testes do jogo](https://github.com/JAOG1V1/conecta-umuarama/actions/workflows/tests.yml) está configurado para executar `npm test` em alterações da branch principal e em pull requests, com Node.js 24. O estado de cada execução remota deve ser consultado no GitHub Actions; os números acima são da execução local.
 
-## Conferência da versão 1.7.1
+## Revisão de 27/09/2026
+
+- As cinco fases foram concluídas pela interface, partindo de um salvamento vazio em uma prévia separada. Foram construídas calçadas, faixas e rampas, com desbloqueio das fases seguintes e resultados coerentes com as soluções verificadas.
+- Última fase concluída com gasto de 20 unidades e percursos de 6, 8 e 10 passos para Lia, Caio e Rosa: dois selos conquistados na mesma solução.
+- Encerramento da campanha conferido com 5/5 fases e 7/8 selos, indicando corretamente o selo de economia restante na quarta fase. O resumo não confunde terminar a campanha com conquistar todos os selos.
+- Construção final guardada como referência A, conferida na comparação e retomada após recarregar a página, com o mesmo gasto de 20 unidades.
+- Correção de teclado conferida no navegador: após clicar em uma árvore e usar as setas, existe uma única célula com entrada por Tab; a tentativa inválida não altera o orçamento.
+- Em 390 × 844 pixels, a última linha do mapa permanece visível acima dos controles ao navegar por teclado; a comparação mantém rolagem interna. Sem erros ou avisos no console nessa sessão.
+- Créditos, identificação dos responsáveis, licença e referências locais conferidos. Nota dos prompts das imagens atualizada para registrar a otimização posterior à geração original.
+
+As regras, as cinco fases e o formato de salvamento foram preservados.
+
+## Conferência anterior — versão 1.7.1, em 22/09/2026
 
 - Retomada do tutorial com a rota pronta conferida no navegador: as três calçadas são preservadas e o aviso orienta usar Testar rotas.
 - Testes automatizados cobrem também o tutorial vazio, a obra parcial, a mudança de orientação ao construir ou remover e a preservação de recordes.
@@ -26,7 +38,7 @@ As regras, as cinco fases e o formato de salvamento foram preservados.
 
 ## Conferências anteriores — versão 1.7.0
 
-Os itens abaixo foram conferidos em 21/09/2026 e registram a validação da versão anterior; não representam uma nova execução visual na versão 1.7.1.
+Os itens abaixo foram conferidos em 21/09/2026 e registram a validação daquela versão; não representam uma nova execução visual na versão atual.
 
 - 68 referências locais de HTML, documentação, CSS e JavaScript conferidas, incluindo nomes de arquivos e subpastas. Sem IDs duplicados ou estilos inline nos arquivos HTML.
 - Prévia de custo e navegação por teclado conferidas no navegador, incluindo construção, Desfazer e Refazer.
