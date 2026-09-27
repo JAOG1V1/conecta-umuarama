@@ -432,9 +432,17 @@ function testRoutes() {
     drawRoutes();drawIdleResidents();
   }
 }
+function setBoardTabStop(index) {
+  state.focus=index;
+  const selected=$('board').children[index];
+  // O clique também atualiza a entrada do Tab quando a construção é rejeitada.
+  for(const tile of $('board').children)tile.tabIndex=tile===selected?0:-1;
+  return selected;
+}
 $('board').addEventListener('click',event=>{
   const b=event.target.closest('button[data-row]');if(!b)return;
-  const r=Number(b.dataset.row),c=Number(b.dataset.col);state.focus=r*currentLevel().map[0].length+c;editCell(r,c);
+  const r=Number(b.dataset.row),c=Number(b.dataset.col);
+  setBoardTabStop(r*currentLevel().map[0].length+c);editCell(r,c);
 });
 $('board').addEventListener('keydown',event=>{
   const b=event.target.closest('button[data-row]');if(!b)return;
@@ -443,7 +451,7 @@ $('board').addEventListener('keydown',event=>{
   if(event.key==='ArrowUp')r=Math.max(0,r-1);else if(event.key==='ArrowDown')r=Math.min(height-1,r+1);
   else if(event.key==='ArrowLeft')c=Math.max(0,c-1);else if(event.key==='ArrowRight')c=Math.min(width-1,c+1);
   else if(event.key==='Home')c=0;else if(event.key==='End')c=width-1;else return;
-  event.preventDefault();b.tabIndex=-1;state.focus=r*width+c;const next=$('board').children[state.focus];next.tabIndex=0;next.focus({preventScroll:true});
+  event.preventDefault();setBoardTabStop(r*width+c).focus({preventScroll:true});
 });
 function revealBoardCell(tile) {
   const narrow=window.matchMedia('(max-width:600px)').matches;
